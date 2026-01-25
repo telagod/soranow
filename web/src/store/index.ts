@@ -47,7 +47,7 @@ export const useTokenStore = create<TokenState>((set, get) => ({
   loading: false,
   selectedIds: new Set(),
   statusFilter: 'all',
-  setTokens: (tokens) => set({ tokens }),
+  setTokens: (tokens) => set({ tokens: Array.isArray(tokens) ? tokens : [] }),
   setLoading: (loading) => set({ loading }),
   setSelectedIds: (ids) => set({ selectedIds: ids }),
   toggleSelect: (id) => {
@@ -67,11 +67,12 @@ export const useTokenStore = create<TokenState>((set, get) => ({
   setStatusFilter: (filter) => set({ statusFilter: filter, selectedIds: new Set() }),
   filteredTokens: () => {
     const { tokens, statusFilter } = get()
-    if (statusFilter === 'all') return tokens
-    if (statusFilter === 'active') return tokens.filter((t) => t.is_active && !t.is_expired)
-    if (statusFilter === 'disabled') return tokens.filter((t) => !t.is_active)
-    if (statusFilter === 'expired') return tokens.filter((t) => t.is_expired)
-    return tokens
+    const tokenArray = Array.isArray(tokens) ? tokens : []
+    if (statusFilter === 'all') return tokenArray
+    if (statusFilter === 'active') return tokenArray.filter((t) => t.is_active && !t.is_expired)
+    if (statusFilter === 'disabled') return tokenArray.filter((t) => !t.is_active)
+    if (statusFilter === 'expired') return tokenArray.filter((t) => t.is_expired)
+    return tokenArray
   },
 }))
 
@@ -106,7 +107,7 @@ interface LogState {
 export const useLogStore = create<LogState>((set) => ({
   logs: [],
   loading: false,
-  setLogs: (logs) => set({ logs }),
+  setLogs: (logs) => set({ logs: Array.isArray(logs) ? logs : [] }),
   setLoading: (loading) => set({ loading }),
 }))
 
