@@ -1,0 +1,1867 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sora2 生成面板</title>
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 18% 20%, #f6f8ff, #eef2ff 38%, #e0f2fe 68%, #f8fbff);
+      --card: rgba(255,255,255,0.82);
+      --border: #cbd5e1;
+      --border-strong: rgba(148,163,184,0.6);
+      --accent: #1d4ed8;
+      --accent-2: #7c3aed;
+      --text: #0f172a;
+      --muted: #334155;
+      --danger: #ef4444;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --shadow-soft: 0 18px 40px rgba(15,23,42,0.12);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "SF Pro Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto; /* 只保留浏览器主滚动 */
+      position: relative;
+    }
+    body::after {
+      /* 细微噪点纹理：增强层次与对比度（不影响主内容交互） */
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
+      background-size: 18px 18px;
+      opacity: 0.35;
+      mix-blend-mode: soft-light;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    .page {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 12px 0 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 12px 0 4px;
+      margin-bottom: 0;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    h1 { margin: 0; font-size: 20px; letter-spacing: .2px; color: #0b0f19; }
+    .badge { padding: 4px 8px; border-radius: 999px; background: rgba(37,99,235,0.18); color: #0b0f19; font-size: 12px; font-weight: 700; }
+    .sub { color: #0b0f19; margin: 0 auto 10px; max-width: 1400px; padding: 0 0; }
+    .content-scroll { flex: 1; overflow: visible; width: 100%; padding: 0; }
+    .full-bleed {
+      width: 100%;
+      position: relative;
+      left: 0;
+      right: 0;
+      margin: 0;
+      background: var(--bg);
+      padding: 0 0 8px;
+      overflow: visible;
+    }
+    .inner {
+      max-width: 1260px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 16px;
+      align-items: start;
+      padding: 0;
+      width: 100%;
+    }
+    .side-panel { width: 100%; }
+    .main-column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+    .form-panel { width: 100%; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.65fr) minmax(240px, 0.35fr);
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .upload-card { width: 100%; }
+    .tasks-panel { width: 100%; display:flex; flex-direction:column; gap:12px; }
+    .dropzone-wrapper { margin-top: 12px; }
+    .dropzone {
+      width: 100%;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      letter-spacing: .2px;
+      word-break: keep-all;
+      white-space: normal;
+    }
+    .meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 4px 12px rgba(15,23,42,0.04);
+    }
+    .meta-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .stepper {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 10px;
+      padding: 0 2px;
+      background: #f8fafc;
+      border: 1px solid #d9dee7;
+    }
+    .stepper .pill-btn {
+      padding: 0 12px;
+      height: 36px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+      min-width: 38px;
+    }
+    .stepper input {
+      height: 36px;
+      width: 52px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+      padding: 0 6px;
+      color: #0f172a;
+      background: #fff;
+      -moz-appearance: textfield;
+    }
+    .stepper input::-webkit-outer-spin-button,
+    .stepper input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 10px 22px rgba(15,23,42,0.07);
+      backdrop-filter: blur(8px);
+    }
+    .section-title {
+      font-size: 14px;
+      margin: 0 0 10px;
+      color: #0b0f19;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-weight: 700;
+    }
+    .input, .select, textarea {
+      width: 100%;
+      border: 1px solid #94a3b8;
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #ffffff;
+      color: #0b0f19;
+      font-size: 14px;
+      outline: none;
+    }
+    textarea { min-height: 130px; resize: vertical; line-height: 1.5; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+    .row > div { flex: 1; min-width: 240px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: none;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      font-weight: 600;
+      color: #fff;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+      box-shadow: 0 10px 25px rgba(37,99,235,0.2);
+    }
+    .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+
+    /* “就绪”反馈：按钮从灰 -> 可点时给一个更明显的脉冲 + 扫光（分镜/多提示尤其重要） */
+    @keyframes btnReadyPop {
+      0% { transform: translateY(0) scale(1); filter: saturate(1) brightness(1); }
+      22% { transform: translateY(-1px) scale(1.045); filter: saturate(1.10) brightness(1.03); }
+      62% { transform: translateY(0) scale(1.015); filter: saturate(1.06) brightness(1.015); }
+      100% { transform: translateY(0) scale(1); filter: saturate(1) brightness(1); }
+    }
+    @keyframes btnReadyRing {
+      0% { opacity: 0; transform: scale(0.88); }
+      16% { opacity: 1; transform: scale(1.0); }
+      100% { opacity: 0; transform: scale(1.38); }
+    }
+    @keyframes btnReadySweep {
+      /* 两段扫光：更耐看且更久 */
+      0% { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+      12% { opacity: .92; }
+      34% { transform: translateX(240%) skewX(-18deg); opacity: 0; }
+      54% { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+      64% { opacity: .86; }
+      86% { transform: translateX(240%) skewX(-18deg); opacity: 0; }
+      100% { opacity: 0; }
+    }
+    .btn.btn-ready {
+      animation: btnReadyPop 2.75s cubic-bezier(.2,.85,.2,1);
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.30), 0 22px 56px rgba(37,99,235,0.36);
+    }
+    .btn.btn-ready::before {
+      content: "";
+      position: absolute;
+      inset: -10px;
+      border-radius: 16px;
+      pointer-events: none;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.55), rgba(255,255,255,0) 52%);
+      mix-blend-mode: overlay;
+      opacity: 0;
+      animation: btnReadyRing 2.75s ease-out;
+    }
+    .btn.btn-ready::after {
+      content: "";
+      position: absolute;
+      top: -35%;
+      bottom: -35%;
+      left: -78%;
+      width: 62%;
+      pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+      transform: translateX(-160%) skewX(-18deg);
+      opacity: 0;
+      animation: btnReadySweep 2.25s linear;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn.btn-ready { animation: none; }
+      .btn.btn-ready::before { animation: none; display: none; }
+      .btn.btn-ready::after { animation: none; display: none; }
+    }
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+      box-shadow: none;
+    }
+    .tab-pill {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .12s ease;
+      position: relative;
+    }
+    .tab-pill.active {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #fff;
+      border-color: rgba(255,255,255,0.6);
+      box-shadow: 0 8px 18px rgba(37,99,235,0.25);
+    }
+    .tab-pill .dot {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f97316;
+      box-shadow: 0 0 0 2px #fff;
+      display: none;
+    }
+    .tab-pill.has-unread .dot { display: block; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .collapse-box {
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.72);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip {
+      padding: 5px 12px;
+      background: #cbd5e1;
+      border: 1px solid #94a3b8;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #0b0f19;
+      font-weight: 700;
+    }
+
+    /* 角色卡工具栏 */
+    .role-head { margin-bottom: 8px; }
+    .role-head-actions { display: inline-flex; align-items: center; gap: 6px; }
+    .role-count { font-size: 12px; font-weight: 700; }
+    .input-wrap { position: relative; margin-bottom: 10px; }
+    .input-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      pointer-events: none;
+    }
+    .input-icon .i { width: 16px; height: 16px; display:block; }
+    .input-with-icon { padding-left: 34px; }
+    .input-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(255,255,255,0.78);
+      color: #0b0f19;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s ease, transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .input-clear:hover { border-color: rgba(29,78,216,0.55); background: #dbeafe; }
+    .input-clear:active { transform: translateY(-50%) scale(0.96); }
+    .input-clear.show { opacity: 1; pointer-events: auto; }
+
+    .role-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0 0 10px;
+    }
+    .role-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+    .role-sort { padding: 8px 10px; font-size: 12px; border-radius: 10px; width: 148px; max-width: 100%; flex: 0 1 148px; }
+
+    .roles {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 2px;
+    }
+    .role-card {
+      position: relative;
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.75);
+      background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(248,250,252,0.80));
+      cursor: grab;
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease, background .12s ease;
+      box-shadow: 0 14px 34px rgba(15,23,42,0.10);
+    }
+    .role-card:hover { border-color: rgba(29,78,216,0.55); transform: translateY(-1px); box-shadow: 0 18px 44px rgba(29,78,216,0.14); }
+    .role-card:active { transform: translateY(0) scale(0.99); }
+    .role-card.attached {
+      border-color: rgba(37,99,235,0.55);
+      background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(255,255,255,0.92));
+    }
+    .role-card.fav {
+      border-color: rgba(245,158,11,0.45);
+      box-shadow: 0 16px 44px rgba(245,158,11,0.12);
+    }
+    .role-avatar {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+      border: 1px solid #94a3b8;
+      background: #ffffff;
+    }
+    /* 右上角收藏星是 absolute 定位；给 meta 留出右侧空间，避免“已挂载”徽标与星号重叠（预留更大，避免极端长名/缩放下重叠） */
+    .role-meta { flex: 1; min-width: 0; padding-right: 62px; }
+    .role-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .role-name { font-weight: 900; font-size: 14px; color: #0b0f19; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .role-badge {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      border: 1px solid rgba(15,23,42,0.14);
+      background: rgba(15,23,42,0.04);
+      color: #0b0f19;
+      flex-shrink: 0;
+    }
+    .role-badge.attached {
+      background: rgba(37,99,235,0.14);
+      border-color: rgba(37,99,235,0.28);
+      color: #1d4ed8;
+    }
+    .role-username { font-size: 12px; color: #0b0f19; opacity: 0.9; }
+    .role-desc {
+      font-size: 12px;
+      color: #0b0f19;
+      margin-top: 4px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .role-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .role-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.75);
+      background: rgba(255,255,255,0.72);
+      color: #0b0f19;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: border-color .12s ease, background .12s ease, transform .12s ease;
+    }
+    .role-chip:hover { border-color: rgba(29,78,216,0.55); background: #dbeafe; }
+    .role-chip:active { transform: scale(0.98); }
+    .role-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .role-actions .pill-btn { padding: 6px 10px; }
+    .role-star {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.75);
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(10px);
+      color: #64748b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease, color .12s ease;
+    }
+    .role-star:hover { border-color: rgba(245,158,11,0.55); background: rgba(245,158,11,0.16); color: #b45309; }
+    .role-star:active { transform: scale(0.96); }
+    .role-star svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+    .role-star.fav { border-color: rgba(245,158,11,0.55); background: rgba(245,158,11,0.16); color: #b45309; }
+    .role-star.fav svg { fill: currentColor; }
+
+    .roles.dense .role-card { padding: 10px; border-radius: 12px; }
+    .roles.dense .role-avatar { width: 44px; height: 44px; border-radius: 12px; }
+    .roles.dense .role-desc { display: none; }
+    .roles.dense .role-chips { display: none; }
+    .roles.dense .role-actions { margin-top: 4px; }
+    .roles.dense .role-meta { padding-right: 58px; }
+    .roles.dense .role-actions .pill-btn { padding: 5px 9px; border-radius: 9px; }
+    .roles.dense .role-star { top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 11px; }
+
+    @keyframes rolePulse { 0% { opacity: .55; } 50% { opacity: 1; } 100% { opacity: .55; } }
+    .role-skeleton { animation: rolePulse 1.15s ease-in-out infinite; }
+    .role-empty {
+      border: 1px dashed rgba(148,163,184,0.8);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255,255,255,0.72);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+    }
+    .role-empty .title { font-weight: 900; color: #0b0f19; }
+    .role-empty .desc { margin-top: 6px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .role-empty .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill-btn {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #94a3b8;
+      background: #cbd5e1;
+      color: #0b0f19;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .pill-btn.active {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #fff;
+      border-color: rgba(255,255,255,0.6);
+      box-shadow: 0 8px 18px rgba(37,99,235,0.18);
+    }
+    .pill-btn:hover { border-color: #1d4ed8; color: #0b0f19; background: #dbeafe; }
+    .pill-btn.active:hover {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #fff;
+      border-color: rgba(255,255,255,0.6);
+      box-shadow: 0 10px 22px rgba(37,99,235,0.22);
+    }
+    .dropzone {
+      border: 1px dashed #94a3b8;
+      border-radius: 12px;
+      padding: 16px;
+      background: #ffffff;
+      color: #0b0f19;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .dropzone.dragover {
+      border-color: #1d4ed8;
+      background: #dbeafe;
+    }
+    .tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      /* 取消内部滚动：避免页面出现“双滚动条” */
+      max-height: none;
+      overflow: visible;
+      padding-right: 0;
+    }
+    .task-card {
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,252,0.78));
+      display: grid;
+      grid-template-columns: 1fr 108px;
+      gap: 10px;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.10);
+      color: #0b0f19;
+    }
+    .flash {
+      animation: flashGlow 0.9s ease;
+    }
+    .flash-bg {
+      animation: flashBg 1s ease;
+    }
+    .flash-focus {
+      animation: flashFocus 0.9s ease;
+    }
+    .spotlight {
+      animation: spotlight 1.2s ease;
+      outline: 3px solid #f59e0b;
+      box-shadow: 0 12px 32px rgba(245,158,11,0.35);
+      transform: scale(1.06);
+    }
+    @keyframes flashGlow {
+      0% { box-shadow: 0 0 0 0 rgba(37,99,235,0.38); }
+      100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+    }
+    @keyframes flashBg {
+      0% { background: #e0f2fe; }
+      100% { background: #ffffff; }
+    }
+    @keyframes flashFocus {
+      0% { box-shadow: 0 0 0 0 rgba(37,99,235,0.28); transform: scale(1.01); }
+      100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); transform: scale(1); }
+    }
+    @keyframes spotlight {
+      0% { outline-color: rgba(245,158,11,0.6); transform: scale(1.1); }
+      100% { outline-color: rgba(245,158,11,0); transform: scale(1.0); }
+    }
+    .task-main { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .task-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .task-title {
+      font-weight: 700;
+      color: #0b0f19;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .task-title.ellipsis {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .task-meta-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(37,99,235,0.12);
+      color: #1d4ed8;
+      font-size: 12px;
+      border: 1px solid rgba(37,99,235,0.25);
+    }
+    .task-actions {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .task-header { flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+    .task-header-left { display:flex; align-items:center; gap:8px; }
+    .task-header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-left:auto; }
+    .task-title-group { display:flex; align-items:center; gap:8px; flex-wrap: wrap; }
+    .task-tabs { display:flex; gap:6px; flex-wrap: wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:4px 6px; }
+    .task-actions-bar { display:flex; gap:8px; flex-wrap: wrap; justify-content:flex-end; }
+    @media (min-width: 1180px) {
+      .task-actions-bar { width: auto; }
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      background: #e5e7eb;
+      border: 1px solid #94a3b8;
+      color: #0b0f19;
+    }
+    .status.queue { color: #92400e; background: #fef3c7; border-color: #f59e0b; }
+    .status.running { color: #1e3a8a; background: #e0e7ff; border-color: #3b82f6; }
+    .status.retrying { color: #7c2d12; background: #ffedd5; border-color: #fb923c; }
+    .status.done { color: #166534; background: #dcfce7; border-color: #15803d; }
+    .status.error { color: #b91c1c; background: #fee2e2; border-color: #dc2626; }
+    .status.stalled { color: #92400e; background: #fff7ed; border-color: #f97316; }
+    .status.retrying::after {
+      content: '';
+      width: 14px;
+      height: 10px;
+      display: inline-block;
+      background:
+        radial-gradient(circle at 2px 5px, rgba(124,45,18,0.95) 2px, transparent 3px),
+        radial-gradient(circle at 7px 5px, rgba(124,45,18,0.55) 2px, transparent 3px),
+        radial-gradient(circle at 12px 5px, rgba(124,45,18,0.25) 2px, transparent 3px);
+      animation: retryDots 0.9s infinite ease-in-out;
+    }
+    @keyframes retryDots {
+      0% { opacity: 0.35; transform: translateY(0); filter: saturate(1); }
+      50% { opacity: 1; transform: translateY(-1px); filter: saturate(1.2); }
+      100% { opacity: 0.35; transform: translateY(0); filter: saturate(1); }
+    }
+    .progress-shell {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #2563eb, #4f46e5);
+      transition: width .2s ease;
+    }
+    .progress-info {
+      display:flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .status.timedout {
+      background: linear-gradient(135deg, #f97316, #fb923c);
+      color: #fff;
+      box-shadow: 0 6px 14px rgba(249,115,22,0.25);
+    }
+    .pill-pill.timedout {
+      background: rgba(249,115,22,0.12);
+      color: #c2410c;
+      border: 1px solid rgba(249,115,22,0.35);
+    }
+    .preview-grid {
+      margin-top: 4px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+      gap: 12px;
+      max-height: none;
+      overflow: visible;
+    }
+    .preview-grid.dense {
+      grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+      gap: 10px;
+    }
+    /* 预览计数更新反馈：更久一点、但不喧宾夺主 */
+    @keyframes count-flash {
+      0% { transform: translateY(0) scale(1); color: #2563eb; text-shadow: 0 0 0 rgba(37,99,235,0); }
+      26% { transform: translateY(-1px) scale(1.06); color: #1d4ed8; text-shadow: 0 0 18px rgba(37,99,235,0.22); }
+      64% { transform: translateY(0) scale(1.02); color: #2563eb; text-shadow: 0 0 14px rgba(37,99,235,0.16); }
+      100% { transform: translateY(0) scale(1); color: inherit; text-shadow: none; }
+    }
+    #previewCount.count-flash { animation: count-flash 1.9s ease-out both; }
+    /* 批量下载按钮：加载态扫光 + 轻回弹（避免“点了没反应”） */
+    @keyframes batch-btn-shimmer{
+      0%{transform:translateX(-140%) skewX(-18deg);opacity:0}
+      18%{opacity:.92}
+      100%{transform:translateX(240%) skewX(-18deg);opacity:0}
+    }
+    @keyframes batch-btn-pop{
+      0%{transform:translateY(0) scale(1)}
+      28%{transform:translateY(-1px) scale(1.04)}
+      100%{transform:translateY(0) scale(1)}
+    }
+    #btnPreviewBatchDownload{position:relative;overflow:hidden}
+    #btnPreviewBatchDownload[data-loading="1"]{
+      animation:batch-btn-pop 1.15s ease-in-out infinite;
+      box-shadow:0 14px 34px rgba(37,99,235,0.18);
+      border-color:rgba(37,99,235,0.35);
+    }
+    #btnPreviewBatchDownload[data-loading="1"]::after{
+      content:"";
+      position:absolute;
+      inset:-1px;
+      pointer-events:none;
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
+      transform:translateX(-140%) skewX(-18deg);
+      animation:batch-btn-shimmer 1.05s linear infinite;
+      mix-blend-mode:overlay;
+    }
+    #btnPreviewBatchDownload[data-done="1"]{
+      animation:batch-btn-pop .85s ease-out;
+      box-shadow:0 0 0 2px rgba(34,197,94,0.22),0 18px 44px rgba(34,197,94,0.12);
+      border-color:rgba(34,197,94,0.34);
+    }
+    .preview-card {
+      position: relative;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(15,23,42,0.12);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    /* 新结果反馈：更“久一点”的光晕 + 扫光（不影响可读性） */
+    @keyframes preview-new-glow {
+      0% { box-shadow: 0 12px 28px rgba(15,23,42,0.12); border-color: rgba(37,99,235,0.18); filter: saturate(1.00); }
+      22% { box-shadow: 0 24px 60px rgba(37,99,235,0.22); border-color: rgba(37,99,235,0.52); filter: saturate(1.06); }
+      62% { box-shadow: 0 18px 48px rgba(37,99,235,0.16); border-color: rgba(37,99,235,0.34); filter: saturate(1.03); }
+      100% { box-shadow: 0 12px 28px rgba(15,23,42,0.12); border-color: #e2e8f0; filter: saturate(1.00); }
+    }
+    @keyframes preview-new-shimmer {
+      0% { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+      12% { opacity: 0.85; }
+      36% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+      58% { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+      70% { opacity: 0.75; }
+      96% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+      100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+    }
+    .preview-card.preview-new {
+      animation: preview-new-glow 3.6s ease-out both;
+    }
+    .preview-card.preview-new::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+      transform: translateX(-160%) skewX(-18deg);
+      animation: preview-new-shimmer 3.6s ease-out both;
+      mix-blend-mode: overlay;
+    }
+    .preview-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px rgba(37,99,235,0.22);
+      border-color: rgba(37,99,235,0.35);
+    }
+    .preview-card video,
+    .preview-card img { width: 100%; height: 160px; object-fit: cover; display: block; background: #0f172a; }
+    .preview-info {
+      padding: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: rgba(15,23,42,0.03);
+      border-top: 1px solid rgba(148,163,184,0.35);
+    }
+    .preview-url {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 180px;
+    }
+    .preview-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .link-btn {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.78);
+      color: #0b0f19;
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    .link-btn:hover {
+      border-color: rgba(37,99,235,0.35);
+      background: #dbeafe;
+      box-shadow: 0 10px 20px rgba(37,99,235,0.12);
+      transform: translateY(-1px);
+    }
+    .link-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .preview-card.preview-new { animation: none; }
+      .preview-card.preview-new::after { animation: none; display: none; }
+      #previewCount.count-flash { animation: none; }
+      #btnPreviewBatchDownload[data-loading="1"]{animation:none}
+      #btnPreviewBatchDownload[data-loading="1"]::after{animation:none;display:none}
+      #btnPreviewBatchDownload[data-done="1"]{animation:none}
+    }
+    .bubble-toast {
+      position: absolute;
+      top: -6px;
+      right: 0;
+      transform: translateY(-100%);
+      background: #1f2937;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease, transform .15s ease;
+      z-index: 10;
+    }
+    .bubble-toast.show {
+      opacity: 1;
+      transform: translateY(-120%);
+    }
+    .preview-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+    }
+    .preview-modal.open { display: flex; }
+    .preview-modal .backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15,23,42,0.55);
+      backdrop-filter: blur(6px);
+    }
+    .preview-modal .modal-card {
+      position: relative;
+      width: min(1080px, 96vw);
+      max-height: 88vh;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(148,163,184,0.55);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .preview-modal .modal-head {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(148,163,184,0.45);
+      background: rgba(248,250,252,0.7);
+      flex-wrap: wrap;
+    }
+    .preview-modal .modal-head .meta {
+      flex: 1;
+      min-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .preview-modal .modal-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .preview-modal .modal-body {
+      padding: 12px;
+      overflow: auto;
+    }
+    .preview-modal .modal-media {
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0b0f19;
+      border: 1px solid rgba(148,163,184,0.35);
+    }
+    .preview-modal video,
+    .preview-modal img {
+      width: 100%;
+      max-height: 72vh;
+      object-fit: contain;
+      display: block;
+      background: #0b0f19;
+    }
+    .log {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      color: #0b0f19;
+      min-height: 140px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+    .tag { padding:4px 8px; border-radius:8px; background:#e0f2fe; color:#0f172a; font-size:12px; }
+    .banner {
+      padding:8px 10px;
+      border-radius:10px;
+      background:#fef3c7;
+      color:#92400e;
+      border:1px solid #f59e0b;
+      font-size:12px;
+      margin-bottom:6px;
+    }
+    /* chip 变体：用于更明确的状态提示 */
+    .chip.ok {
+      background: #dcfce7;
+      border-color: #22c55e;
+      color: #166534;
+    }
+    .chip.warn {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+    .chip.info {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+    }
+
+    /* 文件预览与提示（避免“选了图但不相关”的困惑） */
+    .file-preview-box {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.55);
+      background: rgba(255,255,255,0.78);
+      padding: 10px;
+      box-shadow: 0 12px 26px rgba(15,23,42,0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .file-preview-media {
+      width: 210px;
+      min-height: 120px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,0.55);
+      background: #0f172a;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+    }
+    .file-preview-media img,
+    .file-preview-media video {
+      width: 100%;
+      height: 100%;
+      min-height: 120px;
+      object-fit: cover;
+      display: block;
+      background: #0f172a;
+    }
+    .file-preview-info { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 220px; }
+    .file-preview-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .file-preview-name { font-weight: 800; color: #0b0f19; }
+    .file-preview-meta { font-size: 12px; color: #334155; }
+    .file-preview-warnings { display: flex; flex-wrap: wrap; gap: 6px; }
+    .file-preview-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+    .file-preview-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .file-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.75);
+      background: rgba(255,255,255,0.9);
+      color: #0b0f19;
+      font-size: 12px;
+      font-weight: 700;
+      max-width: 100%;
+    }
+    .file-chip .name {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-chip .kind {
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.75);
+      background: #f1f5f9;
+      color: #0b0f19;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .file-chip .close {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0 2px;
+      color: #64748b;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .file-chip:hover { border-color: rgba(29,78,216,0.55); }
+    .file-chip:hover .close { color: #0b0f19; }
+
+    /* 单次/同提示批量：快切 + 批量摘要（避免隐藏在高级设置里导致误操作） */
+    .upload-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .upload-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: .2px;
+      margin: 0;
+    }
+    .upload-sub {
+      font-size: 12px;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .upload-actions { display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .upload-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      border: 1px solid rgba(148,163,184,0.55);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.72);
+      padding: 10px;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .segmented {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.55);
+      background: rgba(255,255,255,0.66);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.05);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    /* 四种生成模式：统一为“分段选择器”风格，减少 radio/pill 的割裂感 */
+    .segmented.radio {
+      position: relative;
+      flex-wrap: wrap;
+      padding: 4px;
+      gap: 4px;
+      /* 由 JS 计算并写入，用于“滑动高亮” */
+      --seg-x: 4px;
+      --seg-y: 4px;
+      --seg-w: 88px;
+      --seg-h: 38px;
+    }
+    .segmented.radio::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: var(--seg-w);
+      height: var(--seg-h);
+      transform: translate(var(--seg-x), var(--seg-y));
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      box-shadow: 0 10px 24px rgba(37,99,235,0.22);
+      opacity: 0;
+      transition: transform .18s ease, width .18s ease, height .18s ease, opacity .18s ease;
+      z-index: 0;
+    }
+    .segmented.radio[data-ready="1"]::before { opacity: 1; }
+    .segmented.radio input {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+    .segmented.radio .seg-opt {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 2px;
+      min-height: 38px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #0f172a;
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      z-index: 1;
+    }
+    .segmented.radio .seg-opt:hover { border-color: rgba(29,78,216,0.45); background: rgba(37,99,235,0.10); }
+    .segmented.radio .seg-opt:active { transform: scale(0.98); }
+    .segmented.radio .seg-title { font-size: 12px; font-weight: 900; letter-spacing: .2px; line-height: 1.1; }
+    .segmented.radio .seg-sub { font-size: 11px; font-weight: 700; color: #475569; line-height: 1.1; }
+    .segmented.radio input:checked + .seg-opt {
+      background: linear-gradient(135deg, #2563eb, #4f46e5); /* fallback：JS 未就绪时仍有选中态 */
+      color: #fff;
+      border-color: rgba(255,255,255,0.6);
+      box-shadow: 0 8px 18px rgba(37,99,235,0.22);
+    }
+    /* JS 就绪后：用“滑动高亮”统一选中态背景，减少割裂感 */
+    .segmented.radio[data-ready="1"] input:checked + .seg-opt {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+    .segmented.radio input:checked + .seg-opt .seg-sub { color: rgba(255,255,255,0.92); }
+    .segmented.radio input:focus-visible + .seg-opt {
+      outline: 2px solid rgba(37,99,235,0.55);
+      outline-offset: 2px;
+    }
+    .seg-btn {
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #0f172a;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+      transition: all .12s ease;
+      white-space: nowrap;
+    }
+    .seg-btn:hover { border-color: rgba(29,78,216,0.45); background: #dbeafe; }
+    .seg-btn.active {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #fff;
+      border-color: rgba(255,255,255,0.6);
+      box-shadow: 0 8px 18px rgba(37,99,235,0.22);
+    }
+    .seg-btn.more { color: #334155; font-weight: 700; }
+    .quick-count-wrap { display: inline-flex; align-items: center; gap: 8px; }
+    .quick-plan { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .quick-plan .chip { margin: 0; }
+
+    /* 轻量 Toast（generate 页面不依赖 Tailwind，必须有自己的样式） */
+    .toast-host {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      min-width: 220px;
+      max-width: 360px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(15,23,42,0.92);
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(15,23,42,0.22);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transform: translateY(8px);
+      opacity: 0;
+      transition: opacity .18s ease, transform .18s ease;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast .title { font-weight: 900; letter-spacing: .2px; margin-bottom: 2px; }
+    .toast .desc { opacity: .95; }
+    .toast .actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toast .toast-action-btn {
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .toast .toast-action-btn:hover { background: rgba(255,255,255,0.22); }
+    .toast.toast-warn .toast-action-btn {
+      border-color: rgba(15,23,42,0.18);
+      background: rgba(255,255,255,0.40);
+      color: #0b0f19;
+    }
+    .toast.toast-warn .toast-action-btn:hover { background: rgba(255,255,255,0.52); }
+    .toast.toast-success { background: rgba(22,163,74,0.92); }
+    .toast.toast-error { background: rgba(239,68,68,0.92); }
+    .toast.toast-info { background: rgba(37,99,235,0.92); }
+    .toast.toast-warn { background: rgba(245,158,11,0.92); color: #0b0f19; border-color: rgba(15,23,42,0.12); }
+    /* 统一滚动条样式：细滚动条 + 更高可辨识度（可访问性友好） */
+    .tasks,
+    .preview-grid,
+    .log {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(37,99,235,0.55) rgba(15,23,42,0.06);
+    }
+    .tasks::-webkit-scrollbar,
+    .preview-grid::-webkit-scrollbar,
+    .log::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .tasks::-webkit-scrollbar-track,
+    .preview-grid::-webkit-scrollbar-track,
+    .log::-webkit-scrollbar-track {
+      background: transparent;
+      border-radius: 999px;
+    }
+    .tasks::-webkit-scrollbar-thumb,
+    .preview-grid::-webkit-scrollbar-thumb,
+    .log::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #2563eb, #4f46e5);
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.6);
+      box-shadow: inset 0 0 0 1px rgba(37,99,235,0.25);
+    }
+    .tasks::-webkit-scrollbar-thumb:hover,
+    .preview-grid::-webkit-scrollbar-thumb:hover,
+    .log::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #1d4ed8, #4338ca);
+    }
+    /* 任务编号胶囊 */
+    .task-id-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #1d4ed8, #4f46e5);
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 8px 18px rgba(37,99,235,0.25), inset 0 0 0 1px rgba(255,255,255,0.22);
+    }
+    .task-id-pill.large {
+      padding: 6px 14px;
+      font-size: 14px;
+    }
+    /* 日志列表卡片 */
+    .log-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .log-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(37,99,235,0.15);
+      border-color: rgba(37,99,235,0.35);
+    }
+    .log-card.active {
+      border-color: rgba(37,99,235,0.55);
+      box-shadow: 0 14px 32px rgba(37,99,235,0.22);
+      background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(79,70,229,0.08));
+    }
+    .muted { color: var(--muted); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    /* 任务步骤条（3 段状态：进行中 / 成功 / 失败） */
+    .task-steps { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-top:8px; }
+    .task-step {
+      height:8px;
+      border-radius:999px;
+      background:#e5e7eb;
+      position: relative;
+      overflow:hidden;
+    }
+    .task-step.active { background: linear-gradient(90deg, #2563eb, #4f46e5); box-shadow: 0 0 0 1px rgba(37,99,235,0.15); }
+    .task-step.error { background: linear-gradient(90deg, #f87171, #dc2626); box-shadow: 0 0 0 1px rgba(220,38,38,0.15); }
+    .task-step::after {
+      content:'';
+      position:absolute;
+      inset:0;
+      background: rgba(255,255,255,0.16);
+      opacity:0.8;
+    }
+    /* 桌面优先：保留双列，不做早退降级；移动端若需适配再单独覆盖 */
+  </style>
+  <style>
+    .select-mismatch {
+      border: 1px solid #f97316 !important;
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+    }
+    .multi-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,252,0.85));
+      box-shadow: 0 10px 28px rgba(15,23,42,0.08);
+      position: relative;
+    }
+    .multi-row-top {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .multi-prompt-input {
+      width: 100%;
+    }
+    .multi-prompt-textarea {
+      min-height: 78px;
+      resize: vertical;
+      line-height: 1.35;
+    }
+    .multi-prompt-count {
+      width: 78px;
+    }
+    .multi-file-label {
+      position: relative;
+      overflow: hidden;
+      min-width: 110px;
+      justify-content: center;
+    }
+    .multi-file-label input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .multi-file-name {
+      min-width: 120px;
+      font-size: 12px;
+      text-align: left;
+      color: #475569;
+    }
+    .multi-row-roles {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-height: 10px;
+    }
+    .multi-row .multi-remove {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      padding: 6px 10px;
+    }
+
+    /* 分镜（Storyboard）编辑器：复用 multi-row 视觉，补充更适合长提示的 textarea 与编号 */
+    .sb-meta-row {
+      display:flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .sb-index-pill {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      font-weight: 800;
+      font-size: 12px;
+      color: #0b0f19;
+      letter-spacing: 0.2px;
+    }
+    .sb-prompt-textarea {
+      width: 100%;
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.35;
+    }
+    .task-tag-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid rgba(15,23,42,0.14);
+      background: rgba(15,23,42,0.04);
+      color: #0b0f19;
+    }
+    .task-tag-chip.storyboard {
+      background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.10));
+      border-color: rgba(59,130,246,0.28);
+      color: #1d4ed8;
+    }
+    .task-tag-chip.watermark {
+      background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(34,197,94,0.10));
+      border-color: rgba(16,185,129,0.28);
+      color: #047857;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <h1>Sora2 生成面板</h1>
+      <a href="https://linux.do/u/kongt/summary" target="_blank" class="badge" style="text-decoration: none; cursor: pointer;">@kongt</a>
+    </div>
+    <p class="sub">左侧拖拽/挂载角色卡，中间编写提示词并上传素材，右侧查看任务进度与结果预览。</p>
+    <div class="content-scroll full-bleed">
+      <div class="inner">
+        <div class="layout">
+          <aside class="card side-panel">
+        <div class="section-title role-head">
+          <span>角色卡</span>
+          <div class="role-head-actions">
+            <span id="roleCount" class="muted role-count">0</span>
+            <button id="btnRoleDense" class="pill-btn" type="button" title="切换密集模式（角色很多时更好用）">密集</button>
+            <button id="btnReloadRoles" class="pill-btn" type="button">刷新</button>
+          </div>
+        </div>
+
+        <div class="input-wrap" role="search">
+          <span class="input-icon" aria-hidden="true">
+            <svg class="i" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+          </span>
+          <input id="roleSearch" class="input input-with-icon" placeholder="搜索 角色名 / @username / cameo_id / character_id" autocomplete="off">
+          <button id="roleSearchClear" class="input-clear" type="button" aria-label="清空搜索" title="清空">×</button>
+        </div>
+
+        <div class="role-bar">
+          <div id="roleFilterBar" class="role-filter" aria-label="角色过滤">
+            <button class="pill-btn active" type="button" data-role-filter="all">全部</button>
+            <button class="pill-btn" type="button" data-role-filter="attached" title="只看当前模式已挂载的角色（单次/同提示/多提示/分镜各自独立）">已挂载</button>
+            <button class="pill-btn" type="button" data-role-filter="fav">收藏</button>
+          </div>
+          <select id="roleSort" class="select role-sort" aria-label="角色排序">
+            <option value="smart">智能排序</option>
+            <option value="newest">最新创建</option>
+            <option value="oldest">最早创建</option>
+            <option value="name_asc">名称 A→Z</option>
+            <option value="name_desc">名称 Z→A</option>
+          </select>
+        </div>
+
+        <div id="roleList" class="roles" aria-live="polite"></div>
+        <p class="hint">拖拽到提示词输入框，或点“挂载”。收藏会置顶；密集模式更适合角色很多的库。</p>
+          </aside>
+          <div class="main-column">
+        <section class="card form-panel" style="display:flex; flex-direction:column; gap:10px; padding:12px 14px; max-width:1120px; margin:0 auto;">
+          <div class="form-grid">
+            <div>
+              <label class="section-title" for="apiKey" style="margin-bottom:4px;">API Key</label>
+              <input id="apiKey" class="input" type="password" value="Kong000" placeholder="默认 Kong000，可改填自己的">
+            </div>
+            <div>
+              <label class="section-title" for="baseUrl" style="margin-bottom:4px;">服务器地址</label>
+              <input id="baseUrl" class="input" type="text" value="http://127.0.0.1:8000" placeholder="后端地址，默认本机">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top:4px; grid-template-columns: 1fr;">
+            <div>
+              <label class="section-title" for="model" style="margin-bottom:4px;">模型</label>
+              <select id="model" class="select">
+                <optgroup label="标准版视频">
+                  <option value="sora2-landscape-25s">横屏视频 25 秒</option>
+                  <option value="sora2-landscape-15s">横屏视频 15 秒</option>
+                  <option value="sora2-landscape-10s">横屏视频 10 秒</option>
+                  <option value="sora2-portrait-25s">竖屏视频 25 秒</option>
+                  <option value="sora2-portrait-15s">竖屏视频 15 秒</option>
+                  <option value="sora2-portrait-10s">竖屏视频 10 秒</option>
+                </optgroup>
+                <optgroup label="Pro版视频">
+                  <option value="sora2pro-landscape-25s">横屏视频 25 秒 (Pro)</option>
+                  <option value="sora2pro-landscape-15s">横屏视频 15 秒 (Pro)</option>
+                  <option value="sora2pro-landscape-10s">横屏视频 10 秒 (Pro)</option>
+                  <option value="sora2pro-portrait-25s">竖屏视频 25 秒 (Pro)</option>
+                  <option value="sora2pro-portrait-15s">竖屏视频 15 秒 (Pro)</option>
+                  <option value="sora2pro-portrait-10s">竖屏视频 10 秒 (Pro)</option>
+                </optgroup>
+                <optgroup label="Pro HD版视频">
+                  <option value="sora2pro-hd-landscape-15s">横屏视频 15 秒 (Pro HD)</option>
+                  <option value="sora2pro-hd-landscape-10s">横屏视频 10 秒 (Pro HD)</option>
+                  <option value="sora2pro-hd-portrait-15s">竖屏视频 15 秒 (Pro HD)</option>
+                  <option value="sora2pro-hd-portrait-10s">竖屏视频 10 秒 (Pro HD)</option>
+                </optgroup>
+                <optgroup label="图片">
+                  <option value="gpt-image">方图 360×360</option>
+                  <option value="gpt-image-landscape">横图 540×360</option>
+                  <option value="gpt-image-portrait">竖图 360×540</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <div class="upload-toolbar" id="modeToolbar" style="margin-top:4px;">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <span class="muted" style="font-weight:900;">模式</span>
+              <div class="segmented radio" id="batchModeBar" role="radiogroup" aria-label="生成模式选择">
+                <input type="radio" name="batchType" id="batchTypeSingle" value="single" checked>
+                <label class="seg-opt" for="batchTypeSingle" title="单次：只创建 1 条任务（取第 1 个文件）">
+                  <span class="seg-title">单次</span>
+                  <span class="seg-sub">1 条</span>
+                </label>
+
+                <input type="radio" name="batchType" id="batchTypeSamePrompt" value="same_prompt_files">
+                <label class="seg-opt" for="batchTypeSamePrompt" title="同提示批量：多文件共享同一提示；可设置每文件生成份数">
+                  <span class="seg-title">同提示</span>
+                  <span class="seg-sub">多文件</span>
+                </label>
+
+                <input type="radio" name="batchType" id="batchTypeMultiPrompt" value="multi_prompt">
+                <label class="seg-opt" for="batchTypeMultiPrompt" title="多提示批量：每条提示各自生成，可给某行附带文件">
+                  <span class="seg-title">多提示</span>
+                  <span class="seg-sub">按行</span>
+                </label>
+
+                <input type="radio" name="batchType" id="batchTypeStoryboard" value="storyboard">
+                <label class="seg-opt" for="batchTypeStoryboard" title="分镜连续：连续剧情更适合；任务区会打分镜编号，便于按顺序找">
+                  <span class="seg-title">分镜</span>
+                  <span class="seg-sub">连续</span>
+                </label>
+
+                <input type="radio" name="batchType" id="batchTypeCharacter" value="character">
+                <label class="seg-opt" for="batchTypeCharacter" title="角色卡：上传视频创建角色卡，无需提示词">
+                  <span class="seg-title">角色卡</span>
+                  <span class="seg-sub">创建</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div id="promptBlock">
+            <label class="section-title" for="prompt" style="margin-bottom:4px;">提示词（支持拖拽角色卡）</label>
+            <textarea id="prompt" placeholder="英文更稳定，可写动作/时长/镜头等" style="min-height:170px; max-width: 1120px;"></textarea>
+            <div class="hint" id="promptDraftHint" style="display:none;color:#16a34a;">已自动保存草稿</div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+              <div id="attachedRoles" class="chips" style="margin-top:0;"></div>
+              <button type="button" id="btnClearMainRoles" class="pill-btn" style="margin-left:auto;">清空角色</button>
+            </div>
+            <div id="promptHints" class="chips"></div>
+          </div>
+
+          <div class="collapse-box" style="margin-top:4px;" id="advancedBox">
+            <div class="section-title" style="margin-bottom:6px;">快捷标签</div>
+            <div class="chips" id="tagBar">
+              <button class="pill-btn" data-snippet="cinematic lighting, 4k, RAW">电影光感</button>
+              <button class="pill-btn" data-snippet="slow motion, 60fps">慢动作</button>
+              <button class="pill-btn" data-snippet="ultra wide shot">广角</button>
+              <button class="pill-btn" data-snippet="15 seconds">15 秒</button>
+              <button class="pill-btn" data-snippet="masterpiece, highly detailed">高细节</button>
+            </div>
+            <div class="section-title" style="margin:12px 0 6px;">批量工具 / 模板</div>
+            <div class="meta-bar">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span style="font-weight:900; color:#0f172a;">默认份数</span>
+                <span class="muted">导入/导出模板、套用到全部</span>
+              </div>
+            <div class="meta-actions" id="batchMetaActions">
+              <span class="muted" id="globalCountLabel">生成份数</span>
+              <input id="batchConcurrency" class="input" type="number" min="1" max="9999" step="1" value="2" style="width:100px;">
+              <button id="btnApplyGlobalCountToAll" class="pill-btn" style="display:none;" title="将当前默认份数应用到所有“多提示/分镜”行">套用到全部</button>
+              <button id="btnExportBatch" class="pill-btn">导出批量模板</button>
+              <button id="btnImportBatch" class="pill-btn">导入批量模板</button>
+            </div>
+              <input id="importBatchFile" type="file" accept=".json" style="display:none;">
+            </div>
+            <div id="multiGlobalRolesBar" style="display:none; margin-top:10px;">
+              <div class="section-title" style="margin-bottom:6px;">全局角色（仅多提示模式生效）</div>
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <div id="multiAttachedRoles" class="chips"></div>
+                <button type="button" id="btnMultiClearRoles" class="pill-btn" style="margin-left:auto;">清空全局角色</button>
+              </div>
+              <div class="hint">提示：点击左侧角色卡“挂载”，选择“全局（本模式）”。不会影响单次/同提示。</div>
+            </div>
+            <div id="multiPromptList" style="display:none; margin-top:8px; display:flex; flex-direction:column; gap:12px;"></div>
+            <div id="storyboardBox" style="display:none; margin-top:10px;">
+              <div class="section-title" style="margin-bottom:6px;">分镜（连续提示）</div>
+              <div class="sb-meta-row" style="margin-bottom:10px;">
+                <input id="storyboardTitle" class="input" type="text" placeholder="分镜组标题（可选：例如《篮球裁决》）" style="flex:1; min-width:260px;">
+                <span class="muted">镜头数</span>
+                <input id="storyboardShotCount" class="input" type="number" min="1" max="200" step="1" value="8" style="width:110px;">
+                <button type="button" id="btnApplyStoryboardCount" class="pill-btn">应用</button>
+                <span class="muted" title="分镜会一次性创建全部任务并并发发送（不做限流）">并发生成</span>
+                <button type="button" id="btnStoryboardFromPrompt" class="pill-btn" title="把“主提示框”按行拆成分镜：每一行 = 一镜（空行会被忽略）">从主提示按行导入</button>
+                <button type="button" id="btnStoryboardClear" class="pill-btn">清空分镜</button>
+              </div>
+              <div class="hint">建议：先在左侧挂载角色（全局一致），再写每一镜发生的变化；也可以把角色卡拖拽到某一镜文本框，给该镜追加角色。</div>
+              <div style="margin-top:10px;">
+                <div class="section-title" style="margin-bottom:6px;">全局角色（仅分镜模式生效）</div>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                  <div id="storyboardAttachedRoles" class="chips"></div>
+                  <button type="button" id="btnStoryboardScopeRoles" class="pill-btn" title="将“全局角色”从某些分镜中排除（这些分镜后续不再受全局自动挂载控制）">排除分镜</button>
+                  <button type="button" id="btnStoryboardClearRoles" class="pill-btn" style="margin-left:auto;">清空全局角色</button>
+                </div>
+                <div class="hint">提示：点击左侧角色卡“挂载”，选择“全局（本模式）”。不会影响单次/同提示。</div>
+              </div>
+              <div style="margin-top:10px;">
+                <div class="section-title" style="margin-bottom:6px;">连续性 / 统一设定（会自动加到每一镜前面）</div>
+                <textarea id="storyboardContext" class="input" placeholder="例如：统一画风、服装、场景、镜头语言、人物特征（建议英文更稳定）" style="min-height:96px;"></textarea>
+              </div>
+              <div id="storyboardList" style="margin-top:10px; display:flex; flex-direction:column; gap:12px;"></div>
+            </div>
+            <div id="multiPromptActions" style="display:none; margin-top:4px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button type="button" id="btnAddPrompt" class="pill-btn">新增提示</button>
+              <div id="inlineActionBar" style="display:flex; gap:8px; margin-left:auto;">
+                 <button class="btn" id="btnSend" style="padding:10px 16px;" title="快捷键：Ctrl + Enter">开始生成</button>
+                 <button class="btn btn-secondary" id="btnClear" style="padding:10px 16px;">清空输出</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="uploadCard" class="card upload-card" style="display:flex; flex-direction:column; gap:12px; padding:14px;">
+          <div class="upload-head">
+            <div>
+              <div class="upload-title">上传素材</div>
+              <div class="upload-sub">单次：只使用 1 个文件；同提示批量：多文件共享同一提示词（每个文件可生成多份）</div>
+            </div>
+            <div class="upload-actions">
+              <button class="btn" id="btnSendPrimary" title="快捷键：Ctrl + Enter">开始生成</button>
+              <button class="btn btn-secondary" id="btnClearPrimary">清空输出</button>
+            </div>
+          </div>
+          <div class="upload-toolbar" id="uploadToolbar">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div class="quick-count-wrap" id="quickCountWrap" style="display:none;">
+                <span class="muted">每个文件份数</span>
+                <div class="stepper">
+                  <button type="button" class="pill-btn" id="quickCountDec">-</button>
+                  <input id="quickCount" type="number" min="1" max="9999" step="1" value="2" aria-label="每个文件生成份数">
+                  <button type="button" class="pill-btn" id="quickCountInc">+</button>
+                </div>
+              </div>
+              <div class="quick-plan" id="quickPlan" aria-live="polite"></div>
+            </div>
+          </div>
+          <div id="dropzoneWrap" class="dropzone-wrapper" style="margin-top:0;">
+            <div id="dropzone" class="dropzone" style="min-height:80px; border-radius:12px; font-weight:700;">
+              拖拽文件到这里，或点击选择（支持多文件）
+            </div>
+          </div>
+          <input id="file" type="file" accept="image/*,video/*" multiple style="display:none;">
+          <div id="filePreviewBox" class="file-preview-box" style="display:none;">
+            <div id="filePreviewMedia" class="file-preview-media"></div>
+            <div class="file-preview-info">
+              <div class="file-preview-title">
+                <span id="filePreviewName" class="file-preview-name">未选择文件</span>
+                <span id="filePreviewKind" class="chip info">素材</span>
+              </div>
+              <div id="filePreviewMeta" class="file-preview-meta"></div>
+              <div id="filePreviewHints" class="file-preview-warnings"></div>
+              <div id="filePreviewList" class="file-preview-list" style="display:none;"></div>
+              <div class="file-preview-actions">
+                <button id="btnClearFiles" class="pill-btn" type="button" style="display:none;">清空文件</button>
+                <button id="btnUseRecommendedModel" class="pill-btn" style="display:none;">切换到推荐模型</button>
+              </div>
+            </div>
+          </div>
+          <div id="uxBanner" class="banner" style="display:none;"></div>
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; color:#475569; padding:0 2px;">
+            <span>视频建议 3~10 秒；批量时可多选文件；同提示多文件：共享同一提示；多提示批量：文本每行一条。</span>
+          </div>
+        </section>
+
+        <section class="card tasks-panel">
+          <div class="section-title task-header">
+            <div class="task-header-left">
+              <div class="task-title-group">
+                <span>任务进度 / 结果预览</span>
+                <span class="muted" id="taskCount">0 个任务</span>
+              </div>
+            </div>
+            <div class="task-header-right">
+              <div class="task-tabs chips">
+                <button class="tab-pill active" data-tab="tasks" title="快捷键：Alt + 1">任务<span class="dot"></span></button>
+                <button class="tab-pill" data-tab="preview" title="快捷键：Alt + 2">预览<span class="dot"></span></button>
+                <button class="tab-pill" data-tab="log" title="快捷键：Alt + 3">日志<span class="dot"></span></button>
+              </div>
+              <div class="task-actions-bar">
+                <button id="btnOnlyRunning" class="pill-btn">仅运行中</button>
+                <button id="btnPreviewDense" class="pill-btn">预览密集</button>
+                <button id="btnClearDone" class="pill-btn">清理失败任务</button>
+                <button id="btnClearAll" class="pill-btn">全部清空</button>
+              </div>
+            </div>
+          </div>
+          <div id="tabPanelTasks" class="tab-panel active">
+            <div id="taskList" class="tasks"></div>
+          </div>
+          <div id="tabPanelPreview" class="tab-panel" style="margin-top:10px;">
+            <div class="chips" id="previewFilterBar" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+              <span class="muted" style="font-weight:900;">过滤</span>
+              <button class="pill-btn active" type="button" data-preview-filter="all" title="显示全部媒体">全部</button>
+              <button class="pill-btn" type="button" data-preview-filter="video" title="只看视频结果">视频</button>
+              <button class="pill-btn" type="button" data-preview-filter="image" title="只看图片结果">图片</button>
+              <button class="pill-btn" type="button" data-preview-filter="storyboard" title="只看分镜任务的结果">分镜</button>
+              <span class="muted" id="previewCount" style="margin-left:auto;"></span>
+              <button id="btnPreviewBatchDownload" class="pill-btn" type="button" title="批量下载当前过滤的预览结果：点击=打包ZIP（推荐，适配 IDM/浏览器拦截）；Shift+点击=多文件下载" style="margin-left:8px;">批量下载</button>
+            </div>
+            <div id="previewGrid" class="preview-grid"></div>
+          </div>
+          <div id="tabPanelLog" class="tab-panel" style="margin-top:10px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;" id="logActions">
+              <div style="font-weight:700;">任务日志</div>
+              <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+                <button id="btnCopyTaskLog" class="pill-btn">复制当前任务日志</button>
+              </div>
+            </div>
+            <div class="log-layout" style="display:flex; gap:12px; align-items:stretch; min-height:320px;">
+              <div id="logListContainer" class="log-cards" style="width:320px; max-height:360px; overflow:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px;"></div>
+              <div class="log-card" style="flex:1; min-height:320px;">
+                <div class="log-card-head">
+                  <span class="task-id-pill large" id="logDetailId"></span>
+                  <span class="pill-pill" id="logDetailStatus"></span>
+                  <span class="muted" id="logDetailMeta" style="margin-left:8px;"></span>
+                </div>
+                <div class="log-card-body">
+                  <pre class="log" id="logDetailContent">暂无日志</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="previewModal" class="preview-modal" aria-hidden="true">
+      <div class="backdrop" data-close="1"></div>
+      <div class="modal-card" role="dialog" aria-label="预览">
+        <div class="modal-head">
+          <span class="task-id-pill" id="previewModalTaskId" style="display:none;"></span>
+          <span class="task-tag-chip storyboard" id="previewModalStoryboard" style="display:none;"></span>
+          <span class="task-tag-chip watermark" id="previewModalWatermark" style="display:none;"></span>
+          <span class="meta" id="previewModalMeta"></span>
+          <div class="modal-actions">
+            <button id="btnPreviewOpenNew" class="pill-btn">新标签打开</button>
+            <button id="btnPreviewCopyLink" class="pill-btn">复制链接</button>
+            <button id="btnPreviewCopyHtml" class="pill-btn">复制HTML</button>
+            <a id="previewModalDownload" class="pill-btn" download target="_blank" rel="noreferrer">下载</a>
+            <button id="btnPreviewLocateTask" class="pill-btn">定位任务</button>
+            <button id="btnPreviewClose" class="pill-btn">关闭</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div id="previewModalMedia" class="modal-media"></div>
+        </div>
+      </div>
+    </div>
+    <div id="editStoryboardModal" class="preview-modal" aria-hidden="true">
+      <div class="backdrop" data-close="1"></div>
+      <div class="modal-card" role="dialog" aria-label="修改分镜提示词" style="width: min(860px, 96vw);">
+        <div class="modal-head">
+          <span class="task-tag-chip storyboard" id="editStoryboardModalBadge" style="display:none;"></span>
+          <span class="meta" id="editStoryboardModalMeta">修改分镜提示词（仅影响当前分镜任务）</span>
+          <div class="modal-actions">
+            <button id="btnEditStoryboardCancel" class="pill-btn">取消</button>
+            <button id="btnEditStoryboardRetry" class="pill-btn active">保存并重试</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="muted" style="font-size:12px; margin-bottom:8px;">
+            只会重试当前分镜，不会影响其它分镜。快捷键：Ctrl + Enter 保存并重试。
+          </div>
+          <textarea id="editStoryboardTextarea" class="input" placeholder="请修改这条分镜提示词（建议用更安全的表达方式）" style="min-height:220px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div id="toastHost" class="toast-host" aria-live="polite" aria-label="提示"></div>
+<script src="/static/js/generate.js?v=20251214b"></script>
+  <script>
+    (function() {
+      const postHeight = () => {
+        const page = document.querySelector('.page');
+        const h = page
+          ? Math.ceil((page.getBoundingClientRect()?.height || 0) + (page.offsetTop || 0))
+          : document.documentElement.scrollHeight;
+        try {
+          window.parent.postMessage({ type: 'sora-generate-height', height: h }, '*');
+        } catch (e) {
+          console.warn('postMessage height failed', e);
+        }
+      };
+      window.addEventListener('load', postHeight);
+      window.addEventListener('resize', postHeight);
+      const ro = new ResizeObserver(() => postHeight());
+      ro.observe(document.body);
+    })();
+  </script>
+</body>
+</html>

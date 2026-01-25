@@ -1,0 +1,34 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Data files
+data/
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config with secrets (keep template)
+config/setting.toml
+!config/setting.toml.example

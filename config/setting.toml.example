@@ -1,0 +1,62 @@
+[global]
+api_key = "han1234"
+admin_username = "admin"
+admin_password = "admin"
+
+[sora]
+base_url = "https://sora.chatgpt.com/backend"
+timeout = 120
+max_retries = 3
+poll_interval = 2.5
+max_poll_attempts = 600
+
+[server]
+host = "0.0.0.0"
+port = 8000
+
+[debug]
+enabled = false
+log_requests = true
+log_responses = true
+mask_token = true
+
+[cache]
+enabled = false
+timeout = 600
+base_url = "http://127.0.0.1:8000"
+
+[generation]
+image_timeout = 300
+video_timeout = 3000
+
+[admin]
+error_ban_threshold = 3
+# 任务失败重试配置
+task_retry_enabled = true
+task_max_retries = 3
+# 401错误自动禁用token
+auto_disable_on_401 = true
+
+[proxy]
+proxy_enabled = false
+proxy_url = ""
+
+[watermark_free]
+watermark_free_enabled = false
+parse_method = "third_party"
+custom_parse_url = ""
+custom_parse_token = ""
+fallback_on_failure = true  # Auto fallback to watermarked video on failure
+
+[token_refresh]
+at_auto_refresh_enabled = false
+
+[call_logic]
+call_mode = "default"
+
+[timezone]
+# 时区偏移小时数，默认为东八区（中国标准时间）
+# 可选值：-12 到 +14 的整数
+# 常用时区：中国/新加坡 +8, 日本/韩国 +9, 印度 +5.5, 伦敦 0, 纽约 -5, 洛杉矶 -8
+timezone_offset = 8
+
