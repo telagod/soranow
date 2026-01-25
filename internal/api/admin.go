@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"sora2api-go/internal/database"
-	"sora2api-go/internal/models"
-	"sora2api-go/internal/services"
+	"soranow/internal/database"
+	"soranow/internal/models"
+	"soranow/internal/services"
 )
 
 // AdminHandler handles admin API endpoints

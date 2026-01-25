@@ -1,4 +1,4 @@
-module sora2api-go
+module soranow
 
 go 1.24.1
 

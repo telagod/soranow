@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	"sora2api-go/internal/database"
-	"sora2api-go/internal/services"
+	"soranow/internal/database"
+	"soranow/internal/services"
 )
 
 // SetupRouter creates and configures the Gin router

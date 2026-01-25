@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  sora2api:
+  soranow:
     image: teraccc/soranew:latest
-    container_name: sora2api-go
+    container_name: soranow
     ports:
       - "8000:8000"
     volumes:

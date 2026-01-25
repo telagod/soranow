@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"sora2api-go/internal/api"
-	"sora2api-go/internal/config"
-	"sora2api-go/internal/database"
-	"sora2api-go/internal/services"
+	"soranow/internal/api"
+	"soranow/internal/config"
+	"soranow/internal/database"
+	"soranow/internal/services"
 )
 
 func main() {
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// Initialize database
-	dbPath := "data/sora2api.db"
+	dbPath := "data/soranow.db"
 	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
 		log.Fatalf("Failed to create data directory: %v", err)
 	}

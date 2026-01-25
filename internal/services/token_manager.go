@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"sora2api-go/internal/database"
+	"soranow/internal/database"
 )
 
 const (

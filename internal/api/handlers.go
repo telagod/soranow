@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"sora2api-go/internal/database"
-	"sora2api-go/internal/services"
+	"soranow/internal/database"
+	"soranow/internal/services"
 )
 
 // Handler holds dependencies for API handlers

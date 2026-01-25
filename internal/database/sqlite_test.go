@@ -3,7 +3,7 @@ package database
 import (
 	"testing"
 
-	"sora2api-go/internal/models"
+	"soranow/internal/models"
 )
 
 func TestNewDB_InMemory(t *testing.T) {

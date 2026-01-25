@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"sora2api-go/internal/services"
+	"soranow/internal/services"
 )
 
 // Image models

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"sora2api-go/internal/database"
-	"sora2api-go/internal/models"
+	"soranow/internal/database"
+	"soranow/internal/models"
 )
 
 // GenerationConfig holds configuration for generation

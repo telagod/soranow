@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"sora2api-go/internal/database"
-	"sora2api-go/internal/models"
+	"soranow/internal/database"
+	"soranow/internal/models"
 )
 
 func setupTestDB(t *testing.T) *database.DB {

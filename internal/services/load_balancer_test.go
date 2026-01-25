@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"sora2api-go/internal/models"
+	"soranow/internal/models"
 )
 
 func TestLoadBalancer_RoundRobin(t *testing.T) {

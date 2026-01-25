@@ -6,7 +6,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"sora2api-go/internal/models"
+	"soranow/internal/models"
 )
 
 var ErrNotFound = errors.New("record not found")

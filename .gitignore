@@ -33,3 +33,4 @@ Thumbs.db
 # Config with secrets (keep template)
 config/setting.toml
 !config/setting.toml.example
+soranow

@@ -4,7 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"sora2api-go/internal/models"
+	"soranow/internal/models"
 )
 
 // LoadBalancer implements round-robin load balancing for tokens
