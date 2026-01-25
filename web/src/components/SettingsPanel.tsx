@@ -111,8 +111,8 @@ export function SettingsPanel() {
   }
 
   const handleUpdatePassword = async () => {
-    if (!oldPassword || !newPassword) {
-      toast.error('请输入旧密码和新密码')
+    if (!newPassword) {
+      toast.error('请输入新密码')
       return
     }
     if (newPassword.length < 4) {
@@ -120,7 +120,7 @@ export function SettingsPanel() {
       return
     }
     try {
-      await api.updatePassword(oldPassword, newPassword, adminUsername || undefined)
+      await api.updatePassword(oldPassword || '', newPassword, adminUsername || undefined)
       toast.success('密码修改成功，请重新登录')
       setTimeout(() => {
         logout()

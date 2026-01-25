@@ -779,11 +779,9 @@ func (h *AdminHandler) HandleUpdatePassword(c *gin.Context) {
 	}
 
 	// Verify old password
+	// If password is set, old password must match
+	// If password is not set (empty), allow any old password (first time setup)
 	if cfg.AdminPasswordHash != "" && req.OldPassword != cfg.AdminPasswordHash {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "旧密码错误"})
-		return
-	}
-	if cfg.AdminPasswordHash == "" && req.OldPassword != "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "旧密码错误"})
 		return
 	}
