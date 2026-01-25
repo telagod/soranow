@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"soranow/internal/database"
 	"soranow/internal/models"
 	"soranow/internal/services"
@@ -88,19 +89,15 @@ func (h *AdminHandler) HandleLogin(c *gin.Context) {
 		return
 	}
 
-	// Check credentials
+	// Check username
 	if req.Username != cfg.AdminUsername {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户名或密码错误"})
 		return
 	}
 
-	// Check password (empty password hash means empty password is valid)
-	if cfg.AdminPasswordHash != "" && req.Password != cfg.AdminPasswordHash {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-	if cfg.AdminPasswordHash == "" && req.Password != "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+	// Check password using bcrypt
+	if !verifyPassword(req.Password, cfg.AdminPasswordHash) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户名或密码错误"})
 		return
 	}
 
@@ -108,6 +105,30 @@ func (h *AdminHandler) HandleLogin(c *gin.Context) {
 		"token":    cfg.APIKey,
 		"username": cfg.AdminUsername,
 	})
+}
+
+// hashPassword creates a bcrypt hash of the password
+func hashPassword(password string) (string, error) {
+	if password == "" {
+		return "", nil
+	}
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+// verifyPassword checks if the password matches the hash
+func verifyPassword(password, hash string) bool {
+	// If no password is set (empty hash), only empty password is valid
+	if hash == "" {
+		return password == ""
+	}
+	// If hash doesn't start with $2, it's a legacy plaintext password - migrate it
+	if !strings.HasPrefix(hash, "$2") {
+		return password == hash
+	}
+	// Compare using bcrypt
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
 // HandleGetTokens returns all tokens
@@ -274,7 +295,12 @@ func (h *AdminHandler) HandleUpdateConfig(c *gin.Context) {
 		cfg.AdminUsername = *req.AdminUsername
 	}
 	if req.AdminPassword != nil {
-		cfg.AdminPasswordHash = *req.AdminPassword // TODO: hash password
+		hash, err := hashPassword(*req.AdminPassword)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+			return
+		}
+		cfg.AdminPasswordHash = hash
 	}
 	if req.ProxyEnabled != nil {
 		cfg.ProxyEnabled = *req.ProxyEnabled
@@ -760,7 +786,7 @@ func (h *AdminHandler) HandleImportTokens(c *gin.Context) {
 // UpdatePasswordRequest represents password update request
 type UpdatePasswordRequest struct {
 	OldPassword string `json:"old_password"`
-	NewPassword string `json:"new_password"`
+	NewPassword string `json:"new_password" binding:"required,min=4"`
 	Username    string `json:"username"`
 }
 
@@ -768,38 +794,43 @@ type UpdatePasswordRequest struct {
 func (h *AdminHandler) HandleUpdatePassword(c *gin.Context) {
 	var req UpdatePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "新密码至少需要4个字符"})
 		return
 	}
 
 	cfg, err := h.db.GetSystemConfig()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get config"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取配置失败"})
 		return
 	}
 
 	// Verify old password
-	// If password is set, old password must match
-	// If password is not set (empty), allow any old password (first time setup)
-	if cfg.AdminPasswordHash != "" && req.OldPassword != cfg.AdminPasswordHash {
+	if !verifyPassword(req.OldPassword, cfg.AdminPasswordHash) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "旧密码错误"})
 		return
 	}
 
+	// Hash new password
+	newHash, err := hashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+		return
+	}
+
 	// Update password
-	cfg.AdminPasswordHash = req.NewPassword
+	cfg.AdminPasswordHash = newHash
 	if req.Username != "" {
 		cfg.AdminUsername = req.Username
 	}
 
 	if err := h.db.UpdateSystemConfig(cfg); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "保存配置失败"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"message": "密码已更新",
+		"message": "密码已更新，请重新登录",
 	})
 }
 
