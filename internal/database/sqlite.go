@@ -233,10 +233,10 @@ func scanTokens(rows *sql.Rows) ([]*models.Token, error) {
 
 func (db *DB) GetSystemConfig() (*models.SystemConfig, error) {
 	cfg := &models.SystemConfig{}
-	err := db.conn.QueryRow(`SELECT id, admin_username, admin_password_hash, api_key, proxy_enabled, cache_enabled, cache_timeout, image_timeout, video_timeout, error_ban_threshold, task_retry_enabled, task_max_retries, auto_disable_401, watermark_free_enabled, watermark_parse_method, watermark_fallback, call_mode, updated_at FROM system_config WHERE id = 1`).Scan(
-		&cfg.ID, &cfg.AdminUsername, &cfg.AdminPasswordHash, &cfg.APIKey, &cfg.ProxyEnabled, &cfg.CacheEnabled, &cfg.CacheTimeout,
-		&cfg.ImageTimeout, &cfg.VideoTimeout, &cfg.ErrorBanThreshold, &cfg.TaskRetryEnabled, &cfg.TaskMaxRetries, &cfg.AutoDisable401,
-		&cfg.WatermarkFreeEnabled, &cfg.WatermarkParseMethod, &cfg.WatermarkFallback, &cfg.CallMode, &cfg.UpdatedAt)
+	err := db.conn.QueryRow(`SELECT id, admin_username, admin_password_hash, api_key, proxy_enabled, COALESCE(proxy_url, ''), cache_enabled, cache_timeout, COALESCE(cache_base_url, ''), image_timeout, video_timeout, error_ban_threshold, task_retry_enabled, task_max_retries, auto_disable_401, token_auto_refresh, watermark_free_enabled, watermark_parse_method, COALESCE(watermark_parse_url, ''), COALESCE(watermark_parse_token, ''), watermark_fallback, call_mode, updated_at FROM system_config WHERE id = 1`).Scan(
+		&cfg.ID, &cfg.AdminUsername, &cfg.AdminPasswordHash, &cfg.APIKey, &cfg.ProxyEnabled, &cfg.ProxyURL, &cfg.CacheEnabled, &cfg.CacheTimeout, &cfg.CacheBaseURL,
+		&cfg.ImageTimeout, &cfg.VideoTimeout, &cfg.ErrorBanThreshold, &cfg.TaskRetryEnabled, &cfg.TaskMaxRetries, &cfg.AutoDisable401, &cfg.TokenAutoRefresh,
+		&cfg.WatermarkFreeEnabled, &cfg.WatermarkParseMethod, &cfg.WatermarkParseURL, &cfg.WatermarkParseToken, &cfg.WatermarkFallback, &cfg.CallMode, &cfg.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
@@ -246,12 +246,12 @@ func (db *DB) GetSystemConfig() (*models.SystemConfig, error) {
 func (db *DB) UpdateSystemConfig(cfg *models.SystemConfig) error {
 	cfg.UpdatedAt = time.Now()
 	_, err := db.conn.Exec(`
-		UPDATE system_config SET admin_username=?, admin_password_hash=?, api_key=?, proxy_enabled=?, cache_enabled=?, cache_timeout=?,
-		image_timeout=?, video_timeout=?, error_ban_threshold=?, task_retry_enabled=?, task_max_retries=?, auto_disable_401=?,
-		watermark_free_enabled=?, watermark_parse_method=?, watermark_fallback=?, call_mode=?, updated_at=? WHERE id = 1`,
-		cfg.AdminUsername, cfg.AdminPasswordHash, cfg.APIKey, cfg.ProxyEnabled, cfg.CacheEnabled, cfg.CacheTimeout,
-		cfg.ImageTimeout, cfg.VideoTimeout, cfg.ErrorBanThreshold, cfg.TaskRetryEnabled, cfg.TaskMaxRetries, cfg.AutoDisable401,
-		cfg.WatermarkFreeEnabled, cfg.WatermarkParseMethod, cfg.WatermarkFallback, cfg.CallMode, cfg.UpdatedAt)
+		UPDATE system_config SET admin_username=?, admin_password_hash=?, api_key=?, proxy_enabled=?, proxy_url=?, cache_enabled=?, cache_timeout=?, cache_base_url=?,
+		image_timeout=?, video_timeout=?, error_ban_threshold=?, task_retry_enabled=?, task_max_retries=?, auto_disable_401=?, token_auto_refresh=?,
+		watermark_free_enabled=?, watermark_parse_method=?, watermark_parse_url=?, watermark_parse_token=?, watermark_fallback=?, call_mode=?, updated_at=? WHERE id = 1`,
+		cfg.AdminUsername, cfg.AdminPasswordHash, cfg.APIKey, cfg.ProxyEnabled, cfg.ProxyURL, cfg.CacheEnabled, cfg.CacheTimeout, cfg.CacheBaseURL,
+		cfg.ImageTimeout, cfg.VideoTimeout, cfg.ErrorBanThreshold, cfg.TaskRetryEnabled, cfg.TaskMaxRetries, cfg.AutoDisable401, cfg.TokenAutoRefresh,
+		cfg.WatermarkFreeEnabled, cfg.WatermarkParseMethod, cfg.WatermarkParseURL, cfg.WatermarkParseToken, cfg.WatermarkFallback, cfg.CallMode, cfg.UpdatedAt)
 	return err
 }
 
