@@ -18,6 +18,7 @@ vendor/
 # IDE
 .idea/
 .vscode/
+.ace-tool/
 *.swp
 *.swo
 
