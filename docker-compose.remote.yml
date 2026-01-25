@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  sora2api:
+    image: teraccc/soranew:latest
+    container_name: sora2api-go
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - GIN_MODE=release
+      - TZ=Asia/Shanghai
+    restart: unless-stopped

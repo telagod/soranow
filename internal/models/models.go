@@ -131,7 +131,12 @@ type RequestLog struct {
 	RequestBody  string     `db:"request_body" json:"request_body,omitempty"`
 	ResponseBody string     `db:"response_body" json:"response_body,omitempty"`
 	StatusCode   int        `db:"status_code" json:"status_code"`
-	DurationMS   int64      `db:"duration_ms" json:"duration_ms"`
+	DurationMs   int64      `db:"duration_ms" json:"duration"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt    *time.Time `db:"updated_at" json:"updated_at,omitempty"`
+
+	// Joined fields (not in DB)
+	TokenEmail   string  `json:"token_email,omitempty"`
+	TaskStatus   string  `json:"task_status,omitempty"`
+	TaskProgress float64 `json:"progress,omitempty"`
 }

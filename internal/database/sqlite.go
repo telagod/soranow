@@ -281,3 +281,185 @@ func (db *DB) UpdateTask(task *models.Task) error {
 		task.Status, task.Progress, task.ResultURLs, task.ErrorMessage, task.RetryCount, task.CompletedAt, task.ID)
 	return err
 }
+
+// Request Logs
+
+func (db *DB) CreateRequestLog(log *models.RequestLog) (int64, error) {
+	result, err := db.conn.Exec(`
+		INSERT INTO request_logs (token_id, task_id, operation, request_body, response_body, status_code, duration_ms, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		log.TokenID, log.TaskID, log.Operation, log.RequestBody, log.ResponseBody, log.StatusCode, log.DurationMs, time.Now())
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) GetRequestLogs(limit int) ([]*models.RequestLog, error) {
+	rows, err := db.conn.Query(`
+		SELECT l.id, l.token_id, l.task_id, l.operation, l.request_body, l.response_body, l.status_code, l.duration_ms, l.created_at, l.updated_at,
+		       COALESCE(t.email, '') as token_email,
+		       COALESCE(tk.status, '') as task_status,
+		       COALESCE(tk.progress, 0) as task_progress
+		FROM request_logs l
+		LEFT JOIN tokens t ON l.token_id = t.id
+		LEFT JOIN tasks tk ON l.task_id = tk.task_id
+		ORDER BY l.created_at DESC
+		LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []*models.RequestLog
+	for rows.Next() {
+		log := &models.RequestLog{}
+		if err := rows.Scan(&log.ID, &log.TokenID, &log.TaskID, &log.Operation, &log.RequestBody, &log.ResponseBody,
+			&log.StatusCode, &log.DurationMs, &log.CreatedAt, &log.UpdatedAt, &log.TokenEmail, &log.TaskStatus, &log.TaskProgress); err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (db *DB) ClearRequestLogs() error {
+	_, err := db.conn.Exec(`DELETE FROM request_logs`)
+	return err
+}
+
+func (db *DB) UpdateRequestLog(id int64, statusCode int, responseBody string, durationMs int64) error {
+	_, err := db.conn.Exec(`UPDATE request_logs SET status_code=?, response_body=?, duration_ms=?, updated_at=? WHERE id=?`,
+		statusCode, responseBody, durationMs, time.Now(), id)
+	return err
+}
+
+// Batch Token Operations
+
+func (db *DB) BatchEnableTokens(ids []int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	query := `UPDATE tokens SET is_active = 1, consecutive_errors = 0 WHERE id IN (`
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		if i > 0 {
+			query += ","
+		}
+		query += "?"
+		args[i] = id
+	}
+	query += ")"
+	result, err := db.conn.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func (db *DB) BatchDisableTokens(ids []int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	query := `UPDATE tokens SET is_active = 0 WHERE id IN (`
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		if i > 0 {
+			query += ","
+		}
+		query += "?"
+		args[i] = id
+	}
+	query += ")"
+	result, err := db.conn.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func (db *DB) BatchDeleteTokens(ids []int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	query := `DELETE FROM tokens WHERE id IN (`
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		if i > 0 {
+			query += ","
+		}
+		query += "?"
+		args[i] = id
+	}
+	query += ")"
+	result, err := db.conn.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func (db *DB) BatchDeleteDisabledTokens(ids []int64) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	query := `DELETE FROM tokens WHERE is_active = 0 AND id IN (`
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		if i > 0 {
+			query += ","
+		}
+		query += "?"
+		args[i] = id
+	}
+	query += ")"
+	result, err := db.conn.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func (db *DB) BatchUpdateProxy(ids []int64, proxyURL string) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	query := `UPDATE tokens SET proxy_url = ? WHERE id IN (`
+	args := make([]interface{}, len(ids)+1)
+	args[0] = proxyURL
+	for i, id := range ids {
+		if i > 0 {
+			query += ","
+		}
+		query += "?"
+		args[i+1] = id
+	}
+	query += ")"
+	result, err := db.conn.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func (db *DB) GetTokensByIDs(ids []int64) ([]*models.Token, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	query := `SELECT id, token, email, name, is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported, created_at FROM tokens WHERE id IN (`
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		if i > 0 {
+			query += ","
+		}
+		query += "?"
+		args[i] = id
+	}
+	query += ")"
+	rows, err := db.conn.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanTokens(rows)
+}

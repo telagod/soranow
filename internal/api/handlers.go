@@ -11,17 +11,36 @@ import (
 
 // Handler holds dependencies for API handlers
 type Handler struct {
-	db          *database.DB
-	loadBalancer *services.LoadBalancer
-	concurrency  *services.ConcurrencyManager
+	db                *database.DB
+	loadBalancer      *services.LoadBalancer
+	concurrency       *services.ConcurrencyManager
+	tokenManager      *services.TokenManager
+	generationHandler *services.GenerationHandler
 }
 
 // NewHandler creates a new Handler instance
 func NewHandler(db *database.DB, lb *services.LoadBalancer, cm *services.ConcurrencyManager) *Handler {
+	tm := services.NewTokenManager(db, lb, cm)
+
+	// Get config for generation handler
+	var genCfg *services.GenerationConfig
+	if cfg, err := db.GetSystemConfig(); err == nil {
+		genCfg = &services.GenerationConfig{
+			ImageTimeout:  cfg.ImageTimeout,
+			VideoTimeout:  cfg.VideoTimeout,
+			PollInterval:  2500 * time.Millisecond,
+			WatermarkFree: cfg.WatermarkFreeEnabled,
+			CacheEnabled:  cfg.CacheEnabled,
+			CacheBaseURL:  cfg.CacheBaseURL,
+		}
+	}
+
 	return &Handler{
-		db:          db,
-		loadBalancer: lb,
-		concurrency:  cm,
+		db:                db,
+		loadBalancer:      lb,
+		concurrency:       cm,
+		tokenManager:      tm,
+		generationHandler: services.NewGenerationHandler(db, lb, tm, genCfg),
 	}
 }
 
