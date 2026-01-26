@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Loader2, Image, Video, Sparkles } from 'lucide-react'
 import { useToast } from './Toast'
+import { api } from '../api'
 
 type GenerationType = 'image' | 'video'
 
@@ -21,6 +22,17 @@ export function GeneratePanel() {
   const [apiKey, setApiKey] = useState('')
   const [baseUrl, setBaseUrl] = useState(window.location.origin)
   const toast = useToast()
+
+  // Load API key from config on mount
+  useEffect(() => {
+    api.getConfig().then(config => {
+      if (config.api_key) {
+        setApiKey(config.api_key)
+      }
+    }).catch(() => {
+      // Ignore error, user can enter API key manually
+    })
+  }, [])
 
   const imageModels = [
     { id: 'gpt-image', name: 'GPT Image (1:1)' },
