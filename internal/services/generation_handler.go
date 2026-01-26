@@ -143,7 +143,11 @@ func (h *GenerationHandler) Generate(ctx context.Context, prompt, model string, 
 	// Get a token from load balancer
 	token := h.loadBalancer.GetNextToken(!modelCfg.IsVideo, modelCfg.IsVideo)
 	if token == nil {
-		return nil, fmt.Errorf("no available token")
+		tokenType := "图片"
+		if modelCfg.IsVideo {
+			tokenType = "视频"
+		}
+		return nil, fmt.Errorf("没有可用的%s生成 Token，请先导入 Token 并确保已启用", tokenType)
 	}
 
 	// Get proxy URL from config
