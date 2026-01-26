@@ -206,9 +206,23 @@ export const api = {
       added: number
       updated: number
       failed: number
+      message?: string
     }>('/api/tokens/import', {
       method: 'POST',
       body: JSON.stringify({ tokens, mode }),
+    }),
+
+  importTokensText: (content: string, mode: string) =>
+    request<{
+      success: boolean
+      results: Array<{ email: string; success: boolean; status: string; error?: string }>
+      added: number
+      updated: number
+      failed: number
+      message?: string
+    }>('/api/tokens/import', {
+      method: 'POST',
+      body: JSON.stringify({ content, mode }),
     }),
 
   // Token conversion

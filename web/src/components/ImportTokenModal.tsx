@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { X, Loader2, Upload } from 'lucide-react'
+import { X, Loader2, Upload, FileText, FileJson } from 'lucide-react'
 import { api } from '../api'
 import { useToast } from './Toast'
 
@@ -8,10 +8,14 @@ interface Props {
   onSuccess: () => void
 }
 
+type ImportFormat = 'text' | 'json'
+
 export function ImportTokenModal({ onClose, onSuccess }: Props) {
-  const [mode, setMode] = useState<'at' | 'offline' | 'st' | 'rt'>('at')
+  const [format, setFormat] = useState<ImportFormat>('text')
+  const [mode, setMode] = useState<'at' | 'offline' | 'st' | 'rt'>('rt')
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any[] | null>(null)
+  const [textContent, setTextContent] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const toast = useToast()
 
@@ -23,63 +27,120 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
   }
 
   const handleImport = async () => {
+    if (format === 'text') {
+      // Text format import
+      const content = textContent.trim()
+      if (!content) {
+        toast.error('请输入或粘贴 Token 内容')
+        return
+      }
+
+      try {
+        setLoading(true)
+        const res = await api.importTokensText(content, mode)
+        if (res.success) {
+          setResults(res.results || [])
+          toast.success(res.message || `导入完成：新增 ${res.added}，更新 ${res.updated}，失败 ${res.failed}`)
+          if (res.failed === 0) {
+            setTimeout(onSuccess, 1500)
+          }
+        } else {
+          toast.error('导入失败')
+        }
+      } catch (err: any) {
+        toast.error(err.message || '导入失败')
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      // JSON format import
+      const file = fileRef.current?.files?.[0]
+      if (!file) {
+        toast.error('请选择文件')
+        return
+      }
+      if (!file.name.endsWith('.json') && !file.name.endsWith('.txt')) {
+        toast.error('请选择 JSON 或 TXT 文件')
+        return
+      }
+
+      try {
+        const content = await file.text()
+
+        // Try to parse as JSON first
+        let data: any[]
+        try {
+          data = JSON.parse(content)
+          if (!Array.isArray(data)) {
+            toast.error('JSON 格式错误：应为数组')
+            return
+          }
+        } catch {
+          // If not JSON, treat as text format
+          setLoading(true)
+          const res = await api.importTokensText(content, mode)
+          if (res.success) {
+            setResults(res.results || [])
+            toast.success(res.message || `导入完成：新增 ${res.added}，更新 ${res.updated}，失败 ${res.failed}`)
+            if (res.failed === 0) {
+              setTimeout(onSuccess, 1500)
+            }
+          } else {
+            toast.error('导入失败')
+          }
+          setLoading(false)
+          return
+        }
+
+        if (data.length === 0) {
+          toast.error('文件内容为空')
+          return
+        }
+
+        // Validate required fields for JSON
+        for (const item of data) {
+          if (!item.email) {
+            toast.error('导入数据缺少必填字段: email')
+            return
+          }
+          if ((mode === 'offline' || mode === 'at') && !item.access_token) {
+            toast.error(`${item.email} 缺少必填字段: access_token`)
+            return
+          }
+          if (mode === 'st' && !item.session_token) {
+            toast.error(`${item.email} 缺少必填字段: session_token`)
+            return
+          }
+          if (mode === 'rt' && !item.refresh_token) {
+            toast.error(`${item.email} 缺少必填字段: refresh_token`)
+            return
+          }
+        }
+
+        setLoading(true)
+        const res = await api.importTokens(data, mode)
+        if (res.success) {
+          setResults(res.results || [])
+          toast.success(res.message || `导入完成：新增 ${res.added}，更新 ${res.updated}，失败 ${res.failed}`)
+          if (res.failed === 0) {
+            setTimeout(onSuccess, 1500)
+          }
+        } else {
+          toast.error('导入失败')
+        }
+      } catch (err: any) {
+        toast.error(err.message || '导入失败')
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  const handleFileSelect = async () => {
     const file = fileRef.current?.files?.[0]
-    if (!file) {
-      toast.error('请选择文件')
-      return
-    }
-    if (!file.name.endsWith('.json')) {
-      toast.error('请选择 JSON 文件')
-      return
-    }
-
-    try {
+    if (file && format === 'text') {
       const content = await file.text()
-      const data = JSON.parse(content)
-      if (!Array.isArray(data)) {
-        toast.error('JSON 格式错误：应为数组')
-        return
-      }
-      if (data.length === 0) {
-        toast.error('JSON 文件为空')
-        return
-      }
-
-      // Validate required fields
-      for (const item of data) {
-        if (!item.email) {
-          toast.error('导入数据缺少必填字段: email')
-          return
-        }
-        if ((mode === 'offline' || mode === 'at') && !item.access_token) {
-          toast.error(`${item.email} 缺少必填字段: access_token`)
-          return
-        }
-        if (mode === 'st' && !item.session_token) {
-          toast.error(`${item.email} 缺少必填字段: session_token`)
-          return
-        }
-        if (mode === 'rt' && !item.refresh_token) {
-          toast.error(`${item.email} 缺少必填字段: refresh_token`)
-          return
-        }
-      }
-
-      setLoading(true)
-      const res = await api.importTokens(data, mode)
-      if (res.success) {
-        setResults(res.results || [])
-        toast.success(`导入完成：新增 ${res.added}，更新 ${res.updated}，失败 ${res.failed}`)
-        if (res.failed === 0) {
-          setTimeout(onSuccess, 1500)
-        }
-      } else {
-        toast.error('导入失败')
-      }
-    } catch (err: any) {
-      toast.error(err.message || '导入失败')
-    } finally {
-      setLoading(false)
+      setTextContent(content)
     }
   }
 
@@ -94,6 +155,39 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Format Select */}
+          <div>
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+              导入格式
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFormat('text')}
+                className={`flex-1 h-9 flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
+                  format === 'text'
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border)]'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                文本格式
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormat('json')}
+                className={`flex-1 h-9 flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
+                  format === 'json'
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border)]'
+                }`}
+              >
+                <FileJson className="w-4 h-4" />
+                JSON 格式
+              </button>
+            </div>
+          </div>
+
           {/* Mode Select */}
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
@@ -104,26 +198,58 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
               onChange={(e) => setMode(e.target.value as any)}
               className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)]"
             >
+              <option value="rt">RT 模式（推荐）</option>
               <option value="at">AT 模式</option>
               <option value="offline">离线模式</option>
               <option value="st">ST 模式</option>
-              <option value="rt">RT 模式</option>
             </select>
             <p className="text-xs text-[var(--text-muted)] mt-1">{modeHints[mode]}</p>
           </div>
 
-          {/* File Input */}
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-              选择文件
-            </label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".json"
-              className="w-full text-sm text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[var(--bg-tertiary)] file:text-[var(--text-primary)] hover:file:bg-[var(--border)]"
-            />
-          </div>
+          {/* Text Input or File Input */}
+          {format === 'text' ? (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-[var(--text-secondary)]">
+                  Token 内容
+                </label>
+                <label className="text-xs text-[var(--accent)] cursor-pointer hover:underline">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".txt,.json"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  从文件导入
+                </label>
+              </div>
+              <textarea
+                value={textContent}
+                onChange={(e) => setTextContent(e.target.value)}
+                placeholder={`每行一个，格式：邮箱----密码----RefreshToken\n例如：\nuser@example.com----password123----rt_xxxxx\nuser2@example.com----pass456----rt_yyyyy`}
+                className="w-full h-40 px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none font-mono"
+              />
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                支持格式：邮箱----密码----RT 或 邮箱----RT 或 纯RT
+              </p>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                选择文件
+              </label>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".json,.txt"
+                className="w-full text-sm text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[var(--bg-tertiary)] file:text-[var(--text-primary)] hover:file:bg-[var(--border)]"
+              />
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                支持 JSON 数组格式或文本格式
+              </p>
+            </div>
+          )}
 
           {/* Results */}
           {results && (
@@ -141,7 +267,7 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
                   }`}
                 >
                   <div className="flex justify-between">
-                    <span>{r.email}</span>
+                    <span className="truncate max-w-[200px]">{r.email}</span>
                     <span>{r.status === 'added' ? '新增' : r.status === 'updated' ? '更新' : '失败'}</span>
                   </div>
                   {r.error && <div className="mt-1 text-red-400">{r.error}</div>}

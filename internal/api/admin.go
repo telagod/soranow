@@ -664,8 +664,10 @@ func (h *AdminHandler) HandleBatchUpdateProxy(c *gin.Context) {
 
 // ImportTokenRequest represents token import request
 type ImportTokenRequest struct {
-	Tokens []ImportTokenData `json:"tokens"`
-	Mode   string            `json:"mode"` // offline, at, st, rt
+	Tokens  []ImportTokenData `json:"tokens,omitempty"`
+	Content string            `json:"content,omitempty"` // Text format: email----password----refresh_token
+	Format  string            `json:"format"`            // "json" or "text", default auto-detect
+	Mode    string            `json:"mode"`              // offline, at, st, rt
 }
 
 // ImportTokenData represents a single token to import
@@ -692,25 +694,104 @@ type ImportResult struct {
 	Error   string `json:"error,omitempty"`
 }
 
-// HandleImportTokens imports tokens
+// parseTextImport parses text format: email----password----refresh_token
+func parseTextImport(content string) []ImportTokenData {
+	var tokens []ImportTokenData
+	lines := strings.Split(content, "\n")
+
+	for i, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		var email, refreshToken string
+
+		// Support ---- as separator
+		if strings.Contains(line, "----") {
+			parts := strings.Split(line, "----")
+			if len(parts) >= 3 {
+				// Format: email----password----refresh_token
+				email = strings.TrimSpace(parts[0])
+				refreshToken = strings.TrimSpace(parts[2])
+			} else if len(parts) == 2 {
+				// Format: email----token
+				email = strings.TrimSpace(parts[0])
+				refreshToken = strings.TrimSpace(parts[1])
+			}
+		} else {
+			// Just a token
+			refreshToken = line
+			email = fmt.Sprintf("token_%d", i+1)
+		}
+
+		if refreshToken != "" {
+			tokens = append(tokens, ImportTokenData{
+				Email:        email,
+				RefreshToken: refreshToken,
+			})
+		}
+	}
+
+	return tokens
+}
+
+// HandleImportTokens imports tokens from JSON or text format
 func (h *AdminHandler) HandleImportTokens(c *gin.Context) {
 	var req ImportTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求格式错误"})
+		return
+	}
+
+	var tokensToImport []ImportTokenData
+
+	// Auto-detect format or use specified format
+	if req.Content != "" {
+		// Text format provided
+		tokensToImport = parseTextImport(req.Content)
+	} else if len(req.Tokens) > 0 {
+		// JSON format provided
+		tokensToImport = req.Tokens
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供 tokens 数组或 content 文本"})
+		return
+	}
+
+	if len(tokensToImport) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "没有找到有效的 Token"})
 		return
 	}
 
 	var results []ImportResult
 	var added, updated, failed int
 
-	for _, t := range req.Tokens {
+	for _, t := range tokensToImport {
 		result := ImportResult{Email: t.Email}
 
+		// Determine which token to use (priority: AccessToken > RefreshToken > SessionToken)
+		tokenValue := t.AccessToken
+		if tokenValue == "" {
+			tokenValue = t.RefreshToken
+		}
+		if tokenValue == "" {
+			tokenValue = t.SessionToken
+		}
+
+		if tokenValue == "" {
+			result.Success = false
+			result.Status = "failed"
+			result.Error = "token 为空"
+			failed++
+			results = append(results, result)
+			continue
+		}
+
 		// Check if token already exists
-		existingToken, _ := h.db.GetTokenByToken(t.AccessToken)
+		existingToken, _ := h.db.GetTokenByToken(tokenValue)
 
 		token := &models.Token{
-			Token:            t.AccessToken,
+			Token:            tokenValue,
 			Email:            t.Email,
 			SessionToken:     t.SessionToken,
 			RefreshToken:     t.RefreshToken,
@@ -722,6 +803,12 @@ func (h *AdminHandler) HandleImportTokens(c *gin.Context) {
 			VideoEnabled:     true,
 			ImageConcurrency: -1,
 			VideoConcurrency: -1,
+		}
+
+		// If only RefreshToken is provided, use it as the main token
+		if t.AccessToken == "" && t.RefreshToken != "" {
+			token.Token = t.RefreshToken
+			token.RefreshToken = t.RefreshToken
 		}
 
 		if t.IsActive != nil {
@@ -778,6 +865,7 @@ func (h *AdminHandler) HandleImportTokens(c *gin.Context) {
 		"added":   added,
 		"updated": updated,
 		"failed":  failed,
+		"message": fmt.Sprintf("成功导入 %d 个，更新 %d 个，失败 %d 个", added, updated, failed),
 	})
 }
 
