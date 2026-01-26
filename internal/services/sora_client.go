@@ -11,6 +11,9 @@ import (
 	"net/url"
 	"time"
 
+	http2 "github.com/bogdanfinn/fhttp"
+	tls_client "github.com/bogdanfinn/tls-client"
+	"github.com/bogdanfinn/tls-client/profiles"
 	"github.com/google/uuid"
 )
 
@@ -58,6 +61,7 @@ type SoraClient struct {
 	baseURL    string
 	timeout    int
 	httpClient *http.Client
+	tlsClient  tls_client.HttpClient
 	proxyURL   string
 }
 
@@ -76,10 +80,22 @@ func NewSoraClient(baseURL string, timeout int, httpClient *http.Client) *SoraCl
 			},
 		}
 	}
+
+	// Create TLS client with Chrome profile to bypass Cloudflare
+	jar := tls_client.NewCookieJar()
+	options := []tls_client.HttpClientOption{
+		tls_client.WithTimeoutSeconds(timeout),
+		tls_client.WithClientProfile(profiles.Chrome_131),
+		tls_client.WithNotFollowRedirects(),
+		tls_client.WithCookieJar(jar),
+	}
+	tlsClient, _ := tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
+
 	return &SoraClient{
 		baseURL:    baseURL,
 		timeout:    timeout,
 		httpClient: httpClient,
+		tlsClient:  tlsClient,
 	}
 }
 
@@ -98,6 +114,10 @@ func (c *SoraClient) SetProxy(proxyURL string) {
 					IdleConnTimeout:     90 * time.Second,
 				},
 			}
+		}
+		// Update TLS client with proxy
+		if c.tlsClient != nil {
+			c.tlsClient.SetProxy(proxyURL)
 		}
 	}
 }
@@ -127,6 +147,52 @@ func (c *SoraClient) getClientWithProxy(proxyURL string) *http.Client {
 	}
 }
 
+// getTLSClientWithProxy returns a TLS client with optional proxy
+func (c *SoraClient) getTLSClientWithProxy(proxyURL string) tls_client.HttpClient {
+	if proxyURL == "" {
+		proxyURL = c.proxyURL
+	}
+	if proxyURL != "" && c.tlsClient != nil {
+		c.tlsClient.SetProxy(proxyURL)
+	}
+	return c.tlsClient
+}
+
+// doTLSRequest performs an HTTP request using the TLS client (bypasses Cloudflare)
+func (c *SoraClient) doTLSRequest(method, urlStr string, body []byte, headers map[string]string, proxyURL string) ([]byte, int, error) {
+	tlsClient := c.getTLSClientWithProxy(proxyURL)
+	if tlsClient == nil {
+		return nil, 0, errors.New("TLS client not initialized")
+	}
+
+	var bodyReader io.Reader
+	if body != nil {
+		bodyReader = bytes.NewReader(body)
+	}
+
+	req, err := http2.NewRequest(method, urlStr, bodyReader)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := tlsClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return respBody, resp.StatusCode, nil
+}
+
 // GenerateSentinelToken generates openai-sentinel-token by calling /backend-api/sentinel/req
 func (c *SoraClient) GenerateSentinelToken(accessToken string, proxyURL string) (string, error) {
 	reqID := uuid.New().String()
@@ -145,34 +211,24 @@ func (c *SoraClient) GenerateSentinelToken(accessToken string, proxyURL string) 
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", SentinelReqURL, bytes.NewReader(jsonBody))
-	if err != nil {
-		return "", err
+	headers := map[string]string{
+		"Accept":       "application/json, text/plain, */*",
+		"Content-Type": "application/json",
+		"Origin":       "https://sora.chatgpt.com",
+		"Referer":      "https://sora.chatgpt.com/",
+		"User-Agent":   userAgent,
 	}
-
-	req.Header.Set("Accept", "application/json, text/plain, */*")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Origin", "https://sora.chatgpt.com")
-	req.Header.Set("Referer", "https://sora.chatgpt.com/")
-	req.Header.Set("User-Agent", userAgent)
 	if accessToken != "" {
-		req.Header.Set("Authorization", "Bearer "+accessToken)
+		headers["Authorization"] = "Bearer " + accessToken
 	}
 
-	client := c.getClientWithProxy(proxyURL)
-	resp, err := client.Do(req)
+	body, statusCode, err := c.doTLSRequest("POST", SentinelReqURL, jsonBody, headers, proxyURL)
 	if err != nil {
 		return "", fmt.Errorf("sentinel request failed: %v", err)
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read sentinel response: %v", err)
-	}
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("sentinel request failed with status %d: %s", resp.StatusCode, string(body))
+	if statusCode != 200 {
+		return "", fmt.Errorf("sentinel request failed with status %d: %s", statusCode, string(body))
 	}
 
 	var result map[string]interface{}
@@ -243,46 +299,31 @@ func (c *SoraClient) BuildVideoPayload(prompt, orientation, mediaID string, nFra
 	return payload
 }
 
-// makeRequest makes an HTTP request to the Sora API
+// makeRequest makes an HTTP request to the Sora API using TLS client
 func (c *SoraClient) makeRequest(method, endpoint, token string, body interface{}, sentinelToken string, proxyURL string) ([]byte, int, error) {
-	var reqBody io.Reader
+	var jsonBody []byte
+	var err error
 	if body != nil {
-		jsonBody, err := json.Marshal(body)
+		jsonBody, err = json.Marshal(body)
 		if err != nil {
 			return nil, 0, err
 		}
-		reqBody = bytes.NewReader(jsonBody)
 	}
 
 	reqURL := c.baseURL + endpoint
-	req, err := http.NewRequest(method, reqURL, reqBody)
-	if err != nil {
-		return nil, 0, err
+	headers := map[string]string{
+		"Authorization": "Bearer " + token,
+		"Content-Type":  "application/json",
+		"User-Agent":    MobileUserAgents[rand.Intn(len(MobileUserAgents))],
+		"Origin":        "https://sora.chatgpt.com",
+		"Referer":       "https://sora.chatgpt.com/",
 	}
-
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", MobileUserAgents[rand.Intn(len(MobileUserAgents))])
-	req.Header.Set("Origin", "https://sora.chatgpt.com")
-	req.Header.Set("Referer", "https://sora.chatgpt.com/")
 
 	if sentinelToken != "" {
-		req.Header.Set("openai-sentinel-token", sentinelToken)
+		headers["openai-sentinel-token"] = sentinelToken
 	}
 
-	client := c.getClientWithProxy(proxyURL)
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, resp.StatusCode, err
-	}
-
-	return respBody, resp.StatusCode, nil
+	return c.doTLSRequest(method, reqURL, jsonBody, headers, proxyURL)
 }
 
 // GenerateImage starts an image generation task
