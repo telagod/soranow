@@ -139,7 +139,7 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	router := api.SetupRouter(cfg.Global.APIKey, db, loadBalancer, concurrencyManager)
+	router := api.SetupRouter(db, loadBalancer, concurrencyManager)
 
 	// Start server
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)

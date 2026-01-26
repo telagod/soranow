@@ -11,7 +11,7 @@ import (
 )
 
 // SetupRouter creates and configures the Gin router
-func SetupRouter(apiKey string, db *database.DB, lb *services.LoadBalancer, cm *services.ConcurrencyManager) *gin.Engine {
+func SetupRouter(db *database.DB, lb *services.LoadBalancer, cm *services.ConcurrencyManager) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(CORSMiddleware())
@@ -42,7 +42,7 @@ func SetupRouter(apiKey string, db *database.DB, lb *services.LoadBalancer, cm *
 
 	// API v1 routes (auth required)
 	v1 := router.Group("/v1")
-	v1.Use(AuthMiddleware(apiKey))
+	v1.Use(AuthMiddleware(db))
 	{
 		v1.GET("/models", handler.HandleModels)
 		v1.POST("/chat/completions", handler.HandleChatCompletions)

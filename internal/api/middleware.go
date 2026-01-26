@@ -5,10 +5,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"soranow/internal/database"
 )
 
-// AuthMiddleware creates an authentication middleware that validates API keys
-func AuthMiddleware(apiKey string) gin.HandlerFunc {
+// AuthMiddleware creates an authentication middleware that validates API keys dynamically from database
+func AuthMiddleware(db *database.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		if auth == "" {
@@ -33,7 +34,20 @@ func AuthMiddleware(apiKey string) gin.HandlerFunc {
 		}
 
 		token := strings.TrimPrefix(auth, "Bearer ")
-		if token != apiKey {
+
+		// Get API key from database
+		cfg, err := db.GetSystemConfig()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error": gin.H{
+					"message": "Failed to validate API key",
+					"type":    "server_error",
+				},
+			})
+			return
+		}
+
+		if token != cfg.APIKey {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
 					"message": "Invalid API key",
