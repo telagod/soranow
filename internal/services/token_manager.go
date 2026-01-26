@@ -20,7 +20,7 @@ const (
 	SoraSessionURL     = "https://sora.chatgpt.com/api/auth/session"
 	OpenAIOAuthURL     = "https://auth.openai.com/oauth/token"
 	SoraBackendURL     = "https://sora.chatgpt.com/backend"
-	DefaultClientID    = "app_LlGpXReQgckcGGUo2JrYvtJK"
+	DefaultClientID    = "app_1LOVEceTvrP2tHFDNnrPLQkJ"
 	DefaultRedirectURI = "com.openai.chat://auth0.openai.com/ios/com.openai.chat/callback"
 )
 
