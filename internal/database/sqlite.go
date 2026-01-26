@@ -135,10 +135,10 @@ func (db *DB) InitSchema() error {
 
 func (db *DB) CreateToken(token *models.Token) (int64, error) {
 	result, err := db.conn.Exec(`
-		INSERT INTO tokens (token, email, name, is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		token.Token, token.Email, token.Name, token.IsActive, token.IsExpired,
-		token.ImageEnabled, token.VideoEnabled, token.ImageConcurrency, token.VideoConcurrency, token.Sora2Supported)
+		INSERT INTO tokens (token, email, name, session_token, refresh_token, client_id, proxy_url, remark, is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		token.Token, token.Email, token.Name, token.SessionToken, token.RefreshToken, token.ClientID, token.ProxyURL, token.Remark,
+		token.IsActive, token.IsExpired, token.ImageEnabled, token.VideoEnabled, token.ImageConcurrency, token.VideoConcurrency, token.Sora2Supported)
 	if err != nil {
 		return 0, err
 	}
@@ -148,14 +148,15 @@ func (db *DB) CreateToken(token *models.Token) (int64, error) {
 func (db *DB) GetTokenByID(id int64) (*models.Token, error) {
 	token := &models.Token{}
 	err := db.conn.QueryRow(`
-		SELECT id, token, email, COALESCE(name, ''), is_active, is_expired, image_enabled, video_enabled,
+		SELECT id, token, email, COALESCE(name, ''), COALESCE(session_token, ''), COALESCE(refresh_token, ''), COALESCE(client_id, ''), COALESCE(proxy_url, ''), COALESCE(remark, ''),
+		is_active, is_expired, image_enabled, video_enabled,
 		image_concurrency, video_concurrency, sora2_supported, cooled_until,
 		COALESCE(total_image_count, 0), COALESCE(total_video_count, 0), COALESCE(total_error_count, 0),
 		COALESCE(today_image_count, 0), COALESCE(today_video_count, 0), COALESCE(today_error_count, 0), COALESCE(today_date, ''),
 		COALESCE(consecutive_errors, 0), last_error_at, last_used_at, created_at
 		FROM tokens WHERE id = ?`, id).Scan(
-		&token.ID, &token.Token, &token.Email, &token.Name, &token.IsActive, &token.IsExpired,
-		&token.ImageEnabled, &token.VideoEnabled, &token.ImageConcurrency, &token.VideoConcurrency,
+		&token.ID, &token.Token, &token.Email, &token.Name, &token.SessionToken, &token.RefreshToken, &token.ClientID, &token.ProxyURL, &token.Remark,
+		&token.IsActive, &token.IsExpired, &token.ImageEnabled, &token.VideoEnabled, &token.ImageConcurrency, &token.VideoConcurrency,
 		&token.Sora2Supported, &token.CooledUntil,
 		&token.TotalImageCount, &token.TotalVideoCount, &token.TotalErrorCount,
 		&token.TodayImageCount, &token.TodayVideoCount, &token.TodayErrorCount, &token.TodayDate,
@@ -168,9 +169,9 @@ func (db *DB) GetTokenByID(id int64) (*models.Token, error) {
 
 func (db *DB) GetTokenByToken(tokenStr string) (*models.Token, error) {
 	token := &models.Token{}
-	err := db.conn.QueryRow(`SELECT id, token, email, name, is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported, created_at FROM tokens WHERE token = ?`, tokenStr).Scan(
-		&token.ID, &token.Token, &token.Email, &token.Name, &token.IsActive, &token.IsExpired,
-		&token.ImageEnabled, &token.VideoEnabled, &token.ImageConcurrency, &token.VideoConcurrency, &token.Sora2Supported, &token.CreatedAt)
+	err := db.conn.QueryRow(`SELECT id, token, email, COALESCE(name, ''), COALESCE(session_token, ''), COALESCE(refresh_token, ''), COALESCE(client_id, ''), COALESCE(proxy_url, ''), COALESCE(remark, ''), is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported, created_at FROM tokens WHERE token = ?`, tokenStr).Scan(
+		&token.ID, &token.Token, &token.Email, &token.Name, &token.SessionToken, &token.RefreshToken, &token.ClientID, &token.ProxyURL, &token.Remark,
+		&token.IsActive, &token.IsExpired, &token.ImageEnabled, &token.VideoEnabled, &token.ImageConcurrency, &token.VideoConcurrency, &token.Sora2Supported, &token.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
 	}
@@ -179,14 +180,15 @@ func (db *DB) GetTokenByToken(tokenStr string) (*models.Token, error) {
 
 func (db *DB) UpdateToken(token *models.Token) error {
 	_, err := db.conn.Exec(`
-		UPDATE tokens SET token=?, email=?, name=?, is_active=?, is_expired=?, image_enabled=?, video_enabled=?,
+		UPDATE tokens SET token=?, email=?, name=?, session_token=?, refresh_token=?, client_id=?, proxy_url=?, remark=?,
+		is_active=?, is_expired=?, image_enabled=?, video_enabled=?,
 		image_concurrency=?, video_concurrency=?, sora2_supported=?, cooled_until=?,
 		total_image_count=?, total_video_count=?, total_error_count=?,
 		today_image_count=?, today_video_count=?, today_error_count=?, today_date=?,
 		consecutive_errors=?, last_error_at=?, last_used_at=?
 		WHERE id=?`,
-		token.Token, token.Email, token.Name, token.IsActive, token.IsExpired,
-		token.ImageEnabled, token.VideoEnabled, token.ImageConcurrency, token.VideoConcurrency,
+		token.Token, token.Email, token.Name, token.SessionToken, token.RefreshToken, token.ClientID, token.ProxyURL, token.Remark,
+		token.IsActive, token.IsExpired, token.ImageEnabled, token.VideoEnabled, token.ImageConcurrency, token.VideoConcurrency,
 		token.Sora2Supported, token.CooledUntil,
 		token.TotalImageCount, token.TotalVideoCount, token.TotalErrorCount,
 		token.TodayImageCount, token.TodayVideoCount, token.TodayErrorCount, token.TodayDate,
@@ -201,7 +203,7 @@ func (db *DB) DeleteToken(id int64) error {
 }
 
 func (db *DB) GetActiveTokens() ([]*models.Token, error) {
-	rows, err := db.conn.Query(`SELECT id, token, email, name, is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported, created_at FROM tokens WHERE is_active = 1 AND is_expired = 0`)
+	rows, err := db.conn.Query(`SELECT id, token, email, COALESCE(name, ''), COALESCE(session_token, ''), COALESCE(refresh_token, ''), COALESCE(client_id, ''), COALESCE(proxy_url, ''), COALESCE(remark, ''), is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported, created_at FROM tokens WHERE is_active = 1 AND is_expired = 0`)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +212,7 @@ func (db *DB) GetActiveTokens() ([]*models.Token, error) {
 }
 
 func (db *DB) GetAllTokens() ([]*models.Token, error) {
-	rows, err := db.conn.Query(`SELECT id, token, email, name, is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported, created_at FROM tokens`)
+	rows, err := db.conn.Query(`SELECT id, token, email, COALESCE(name, ''), COALESCE(session_token, ''), COALESCE(refresh_token, ''), COALESCE(client_id, ''), COALESCE(proxy_url, ''), COALESCE(remark, ''), is_active, is_expired, image_enabled, video_enabled, image_concurrency, video_concurrency, sora2_supported, created_at FROM tokens`)
 	if err != nil {
 		return nil, err
 	}
@@ -222,8 +224,8 @@ func scanTokens(rows *sql.Rows) ([]*models.Token, error) {
 	var tokens []*models.Token
 	for rows.Next() {
 		token := &models.Token{}
-		if err := rows.Scan(&token.ID, &token.Token, &token.Email, &token.Name, &token.IsActive, &token.IsExpired,
-			&token.ImageEnabled, &token.VideoEnabled, &token.ImageConcurrency, &token.VideoConcurrency, &token.Sora2Supported, &token.CreatedAt); err != nil {
+		if err := rows.Scan(&token.ID, &token.Token, &token.Email, &token.Name, &token.SessionToken, &token.RefreshToken, &token.ClientID, &token.ProxyURL, &token.Remark,
+			&token.IsActive, &token.IsExpired, &token.ImageEnabled, &token.VideoEnabled, &token.ImageConcurrency, &token.VideoConcurrency, &token.Sora2Supported, &token.CreatedAt); err != nil {
 			return nil, err
 		}
 		tokens = append(tokens, token)
