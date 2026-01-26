@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	http2 "github.com/bogdanfinn/fhttp"
+	tls_client "github.com/bogdanfinn/tls-client"
+	"github.com/bogdanfinn/tls-client/profiles"
 	"soranow/internal/database"
 )
 
@@ -27,10 +30,21 @@ type TokenManager struct {
 	loadBalancer *LoadBalancer
 	concurrency  *ConcurrencyManager
 	httpClient   *http.Client
+	tlsClient    tls_client.HttpClient
 }
 
 // NewTokenManager creates a new token manager
 func NewTokenManager(db *database.DB, lb *LoadBalancer, cm *ConcurrencyManager) *TokenManager {
+	// Create TLS client with Chrome profile
+	jar := tls_client.NewCookieJar()
+	options := []tls_client.HttpClientOption{
+		tls_client.WithTimeoutSeconds(30),
+		tls_client.WithClientProfile(profiles.Chrome_131),
+		tls_client.WithNotFollowRedirects(),
+		tls_client.WithCookieJar(jar),
+	}
+	tlsClient, _ := tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
+
 	return &TokenManager{
 		db:           db,
 		loadBalancer: lb,
@@ -38,7 +52,46 @@ func NewTokenManager(db *database.DB, lb *LoadBalancer, cm *ConcurrencyManager) 
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		tlsClient: tlsClient,
 	}
+}
+
+// doTLSRequest performs an HTTP request using the TLS client
+func (m *TokenManager) doTLSRequest(method, urlStr string, body string, headers map[string]string, proxyURL string) ([]byte, int, error) {
+	if m.tlsClient == nil {
+		return nil, 0, fmt.Errorf("TLS client not initialized")
+	}
+
+	if proxyURL != "" {
+		m.tlsClient.SetProxy(proxyURL)
+	}
+
+	var bodyReader io.Reader
+	if body != "" {
+		bodyReader = strings.NewReader(body)
+	}
+
+	req, err := http2.NewRequest(method, urlStr, bodyReader)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := m.tlsClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return respBody, resp.StatusCode, nil
 }
 
 // STToATResult represents the result of ST to AT conversion
@@ -155,41 +208,18 @@ func (m *TokenManager) ConvertRTToAT(refreshToken string, clientID string, proxy
 	formData.Set("redirect_uri", DefaultRedirectURI)
 	formData.Set("refresh_token", refreshToken)
 
-	req, err := http.NewRequest("POST", OpenAIOAuthURL, strings.NewReader(formData.Encode()))
-	if err != nil {
-		return &RTToATResult{Success: false, Message: err.Error()}, err
+	headers := map[string]string{
+		"Content-Type": "application/x-www-form-urlencoded",
+		"User-Agent":   MobileUserAgents[0],
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", MobileUserAgents[0])
-
-	// Create client with optional proxy
-	client := m.httpClient
-	if proxyURL != "" {
-		proxyURLParsed, err := url.Parse(proxyURL)
-		if err == nil {
-			client = &http.Client{
-				Timeout: 30 * time.Second,
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(proxyURLParsed),
-				},
-			}
-		}
-	}
-
-	resp, err := client.Do(req)
+	body, statusCode, err := m.doTLSRequest("POST", OpenAIOAuthURL, formData.Encode(), headers, proxyURL)
 	if err != nil {
 		return &RTToATResult{Success: false, Message: fmt.Sprintf("请求失败: %v", err)}, err
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &RTToATResult{Success: false, Message: fmt.Sprintf("读取响应失败: %v", err)}, err
-	}
-
-	if resp.StatusCode != 200 {
-		return &RTToATResult{Success: false, Message: fmt.Sprintf("API 返回错误: %d - %s", resp.StatusCode, string(body))}, nil
+	if statusCode != 200 {
+		return &RTToATResult{Success: false, Message: fmt.Sprintf("API 返回错误: %d - %s", statusCode, string(body))}, nil
 	}
 
 	var result map[string]interface{}

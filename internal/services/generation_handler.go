@@ -159,17 +159,54 @@ func (h *GenerationHandler) Generate(ctx context.Context, prompt, model string, 
 		proxyURL = token.ProxyURL
 	}
 
+	// Get the access token to use
+	accessToken := token.Token
+
+	// Check if token is a Refresh Token (starts with "rt_") and convert to Access Token
+	if strings.HasPrefix(token.Token, "rt_") {
+		if stream && eventChan != nil {
+			eventChan <- StreamEvent{Type: "progress", Progress: 0, Content: "正在转换 Token..."}
+		}
+
+		// Use RefreshToken field if available, otherwise use Token field
+		rt := token.RefreshToken
+		if rt == "" {
+			rt = token.Token
+		}
+
+		result, err := h.tokenManager.ConvertRTToAT(rt, token.ClientID, proxyURL)
+		if err != nil || !result.Success {
+			errMsg := "Token 转换失败"
+			if err != nil {
+				errMsg = err.Error()
+			} else if result.Message != "" {
+				errMsg = result.Message
+			}
+			h.tokenManager.RecordError(token.ID)
+			return nil, fmt.Errorf("RT 转换 AT 失败: %s", errMsg)
+		}
+
+		accessToken = result.AccessToken
+
+		// Update token in database with new AT
+		token.Token = result.AccessToken
+		if result.RefreshToken != "" {
+			token.RefreshToken = result.RefreshToken
+		}
+		h.db.UpdateToken(token)
+	}
+
 	var taskID string
 	var err error
 
 	if modelCfg.IsVideo {
 		taskID, err = h.soraClient.GenerateVideo(
-			prompt, token.Token, modelCfg.Orientation, "",
+			prompt, accessToken, modelCfg.Orientation, "",
 			modelCfg.NFrames, "", modelCfg.Model, modelCfg.Size, proxyURL,
 		)
 	} else {
 		taskID, err = h.soraClient.GenerateImage(
-			prompt, token.Token, modelCfg.Width, modelCfg.Height, "", proxyURL,
+			prompt, accessToken, modelCfg.Width, modelCfg.Height, "", proxyURL,
 		)
 	}
 
@@ -199,7 +236,7 @@ func (h *GenerationHandler) Generate(ctx context.Context, prompt, model string, 
 		timeout = time.Duration(h.config.VideoTimeout) * time.Second
 	}
 
-	result, err := h.pollTaskResult(ctx, taskID, token.Token, modelCfg.IsVideo, proxyURL, timeout, stream, eventChan)
+	result, err := h.pollTaskResult(ctx, taskID, accessToken, modelCfg.IsVideo, proxyURL, timeout, stream, eventChan)
 	if err != nil {
 		h.tokenManager.RecordError(token.ID)
 		task.Status = models.TaskStatusFailed
