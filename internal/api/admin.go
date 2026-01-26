@@ -769,16 +769,16 @@ func (h *AdminHandler) HandleImportTokens(c *gin.Context) {
 	for _, t := range tokensToImport {
 		result := ImportResult{Email: t.Email}
 
-		// Determine which token to use (priority: AccessToken > RefreshToken > SessionToken)
-		tokenValue := t.AccessToken
-		if tokenValue == "" {
-			tokenValue = t.RefreshToken
+		// Determine the refresh token
+		refreshToken := t.RefreshToken
+		if refreshToken == "" {
+			refreshToken = t.AccessToken // In case AT is actually an RT
 		}
-		if tokenValue == "" {
-			tokenValue = t.SessionToken
+		if refreshToken == "" {
+			refreshToken = t.SessionToken
 		}
 
-		if tokenValue == "" {
+		if refreshToken == "" {
 			result.Success = false
 			result.Status = "failed"
 			result.Error = "token 为空"
@@ -787,14 +787,14 @@ func (h *AdminHandler) HandleImportTokens(c *gin.Context) {
 			continue
 		}
 
-		// Check if token already exists
-		existingToken, _ := h.db.GetTokenByToken(tokenValue)
+		// Check if token already exists by refresh token
+		existingToken, _ := h.db.GetTokenByToken(refreshToken)
 
 		token := &models.Token{
-			Token:            tokenValue,
+			Token:            refreshToken, // Store RT in Token field, will be replaced with AT on first use
 			Email:            t.Email,
 			SessionToken:     t.SessionToken,
-			RefreshToken:     t.RefreshToken,
+			RefreshToken:     refreshToken, // Always store RT in RefreshToken field
 			ClientID:         t.ClientID,
 			ProxyURL:         t.ProxyURL,
 			Remark:           t.Remark,
@@ -803,12 +803,6 @@ func (h *AdminHandler) HandleImportTokens(c *gin.Context) {
 			VideoEnabled:     true,
 			ImageConcurrency: -1,
 			VideoConcurrency: -1,
-		}
-
-		// If only RefreshToken is provided, use it as the main token
-		if t.AccessToken == "" && t.RefreshToken != "" {
-			token.Token = t.RefreshToken
-			token.RefreshToken = t.RefreshToken
 		}
 
 		if t.IsActive != nil {
