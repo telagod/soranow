@@ -111,11 +111,13 @@ type VideoDraft struct {
 
 // SoraClient handles communication with the Sora API
 type SoraClient struct {
-	baseURL    string
-	timeout    int
-	httpClient *http.Client
-	tlsClient  tls_client.HttpClient
-	proxyURL   string
+	baseURL        string
+	timeout        int
+	httpClient     *http.Client
+	tlsClient      tls_client.HttpClient
+	proxyURL       string
+	sessionManager *SessionManager
+	proxyManager   *ProxyManager
 }
 
 // NewSoraClient creates a new Sora API client
@@ -145,11 +147,22 @@ func NewSoraClient(baseURL string, timeout int, httpClient *http.Client) *SoraCl
 	tlsClient, _ := tls_client.NewHttpClient(tls_client.NewNoopLogger(), options...)
 
 	return &SoraClient{
-		baseURL:    baseURL,
-		timeout:    timeout,
-		httpClient: httpClient,
-		tlsClient:  tlsClient,
+		baseURL:        baseURL,
+		timeout:        timeout,
+		httpClient:     httpClient,
+		tlsClient:      tlsClient,
+		sessionManager: NewSessionManager(timeout),
 	}
+}
+
+// SetProxyManager sets the proxy manager for the client
+func (c *SoraClient) SetProxyManager(pm *ProxyManager) {
+	c.proxyManager = pm
+}
+
+// SetSessionManager sets the session manager for the client
+func (c *SoraClient) SetSessionManager(sm *SessionManager) {
+	c.sessionManager = sm
 }
 
 // SetProxy sets the proxy URL for the client
@@ -201,9 +214,14 @@ func (c *SoraClient) getClientWithProxy(proxyURL string) *http.Client {
 }
 
 // getTLSClientWithProxy returns a TLS client with optional proxy
+// If token is provided, uses session manager for cookie persistence
 func (c *SoraClient) getTLSClientWithProxy(proxyURL string) tls_client.HttpClient {
 	if proxyURL == "" {
 		proxyURL = c.proxyURL
+	}
+	// If proxy manager is set, get proxy from pool
+	if proxyURL == "" && c.proxyManager != nil {
+		proxyURL = c.proxyManager.GetProxyURL()
 	}
 	if proxyURL != "" && c.tlsClient != nil {
 		c.tlsClient.SetProxy(proxyURL)
@@ -211,9 +229,47 @@ func (c *SoraClient) getTLSClientWithProxy(proxyURL string) tls_client.HttpClien
 	return c.tlsClient
 }
 
+// getTLSClientForToken returns a TLS client with session persistence for the given token
+func (c *SoraClient) getTLSClientForToken(token string, proxyURL string) (tls_client.HttpClient, error) {
+	if proxyURL == "" {
+		proxyURL = c.proxyURL
+	}
+	// If proxy manager is set, get proxy from pool
+	if proxyURL == "" && c.proxyManager != nil {
+		proxyURL = c.proxyManager.GetProxyURL()
+	}
+
+	// Use session manager for cookie persistence
+	if c.sessionManager != nil {
+		return c.sessionManager.GetSession(token, proxyURL)
+	}
+
+	// Fallback to default TLS client
+	if proxyURL != "" && c.tlsClient != nil {
+		c.tlsClient.SetProxy(proxyURL)
+	}
+	return c.tlsClient, nil
+}
+
 // doTLSRequest performs an HTTP request using the TLS client (bypasses Cloudflare)
 func (c *SoraClient) doTLSRequest(method, urlStr string, body []byte, headers map[string]string, proxyURL string) ([]byte, int, error) {
-	tlsClient := c.getTLSClientWithProxy(proxyURL)
+	return c.doTLSRequestWithToken(method, urlStr, body, headers, proxyURL, "")
+}
+
+// doTLSRequestWithToken performs an HTTP request with session persistence for the given token
+func (c *SoraClient) doTLSRequestWithToken(method, urlStr string, body []byte, headers map[string]string, proxyURL string, token string) ([]byte, int, error) {
+	var tlsClient tls_client.HttpClient
+	var err error
+
+	if token != "" && c.sessionManager != nil {
+		tlsClient, err = c.getTLSClientForToken(token, proxyURL)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to get session: %w", err)
+		}
+	} else {
+		tlsClient = c.getTLSClientWithProxy(proxyURL)
+	}
+
 	if tlsClient == nil {
 		return nil, 0, errors.New("TLS client not initialized")
 	}
@@ -300,7 +356,8 @@ func (c *SoraClient) GenerateSentinelToken(accessToken string, proxyURL string) 
 		headers["Authorization"] = "Bearer " + accessToken
 	}
 
-	body, statusCode, err := c.doTLSRequest("POST", SentinelReqURL, jsonBody, headers, proxyURL)
+	// Use token for session persistence
+	body, statusCode, err := c.doTLSRequestWithToken("POST", SentinelReqURL, jsonBody, headers, proxyURL, accessToken)
 	if err != nil {
 		return "", fmt.Errorf("sentinel request failed: %v", err)
 	}
@@ -426,7 +483,7 @@ func (c *SoraClient) BuildStoryboardPayload(prompt, orientation, mediaID string,
 	}
 }
 
-// makeRequest makes an HTTP request to the Sora API using TLS client
+// makeRequest makes an HTTP request to the Sora API using TLS client with session persistence
 func (c *SoraClient) makeRequest(method, endpoint, token string, body interface{}, sentinelToken string, proxyURL string) ([]byte, int, error) {
 	var jsonBody []byte
 	var err error
@@ -450,7 +507,8 @@ func (c *SoraClient) makeRequest(method, endpoint, token string, body interface{
 		headers["openai-sentinel-token"] = sentinelToken
 	}
 
-	return c.doTLSRequest(method, reqURL, jsonBody, headers, proxyURL)
+	// Use token for session persistence
+	return c.doTLSRequestWithToken(method, reqURL, jsonBody, headers, proxyURL, token)
 }
 
 // GenerateImage starts an image generation task

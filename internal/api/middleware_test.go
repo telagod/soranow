@@ -14,7 +14,15 @@ func init() {
 
 func TestAuthMiddleware_ValidAPIKey(t *testing.T) {
 	apiKey := "test_api_key"
-	middleware := AuthMiddleware(apiKey)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Set API key in config
+	cfg, _ := db.GetSystemConfig()
+	cfg.APIKey = apiKey
+	db.UpdateSystemConfig(cfg)
+
+	middleware := AuthMiddleware(db)
 
 	router := gin.New()
 	router.Use(middleware)
@@ -35,7 +43,15 @@ func TestAuthMiddleware_ValidAPIKey(t *testing.T) {
 
 func TestAuthMiddleware_InvalidAPIKey(t *testing.T) {
 	apiKey := "test_api_key"
-	middleware := AuthMiddleware(apiKey)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Set API key in config
+	cfg, _ := db.GetSystemConfig()
+	cfg.APIKey = apiKey
+	db.UpdateSystemConfig(cfg)
+
+	middleware := AuthMiddleware(db)
 
 	router := gin.New()
 	router.Use(middleware)
@@ -55,8 +71,10 @@ func TestAuthMiddleware_InvalidAPIKey(t *testing.T) {
 }
 
 func TestAuthMiddleware_MissingHeader(t *testing.T) {
-	apiKey := "test_api_key"
-	middleware := AuthMiddleware(apiKey)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	middleware := AuthMiddleware(db)
 
 	router := gin.New()
 	router.Use(middleware)
@@ -76,7 +94,15 @@ func TestAuthMiddleware_MissingHeader(t *testing.T) {
 
 func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 	apiKey := "test_api_key"
-	middleware := AuthMiddleware(apiKey)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Set API key in config
+	cfg, _ := db.GetSystemConfig()
+	cfg.APIKey = apiKey
+	db.UpdateSystemConfig(cfg)
+
+	middleware := AuthMiddleware(db)
 
 	router := gin.New()
 	router.Use(middleware)

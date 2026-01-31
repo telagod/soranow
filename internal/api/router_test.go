@@ -11,17 +11,46 @@ import (
 func TestSetupRouter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := SetupRouter("test_api_key", nil, nil, nil)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	router := SetupRouter(db, nil, nil)
 
 	if router == nil {
 		t.Fatal("Expected non-nil router")
 	}
 }
 
+func TestRouter_HealthEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	db := setupTestDB(t)
+	defer db.Close()
+
+	router := SetupRouter(db, nil, nil)
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+}
+
 func TestRouter_ModelsEndpoint(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := SetupRouter("test_api_key", nil, nil, nil)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Set API key
+	cfg, _ := db.GetSystemConfig()
+	cfg.APIKey = "test_api_key"
+	db.UpdateSystemConfig(cfg)
+
+	router := SetupRouter(db, nil, nil)
 
 	req := httptest.NewRequest("GET", "/v1/models", nil)
 	req.Header.Set("Authorization", "Bearer test_api_key")
@@ -37,7 +66,10 @@ func TestRouter_ModelsEndpoint(t *testing.T) {
 func TestRouter_ModelsEndpoint_Unauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := SetupRouter("test_api_key", nil, nil, nil)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	router := SetupRouter(db, nil, nil)
 
 	req := httptest.NewRequest("GET", "/v1/models", nil)
 	w := httptest.NewRecorder()
@@ -49,25 +81,13 @@ func TestRouter_ModelsEndpoint_Unauthorized(t *testing.T) {
 	}
 }
 
-func TestRouter_HealthEndpoint(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	router := SetupRouter("test_api_key", nil, nil, nil)
-
-	req := httptest.NewRequest("GET", "/health", nil)
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status 200, got %d", w.Code)
-	}
-}
-
 func TestRouter_CORSHeaders(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	router := SetupRouter("test_api_key", nil, nil, nil)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	router := SetupRouter(db, nil, nil)
 
 	req := httptest.NewRequest("OPTIONS", "/v1/models", nil)
 	req.Header.Set("Origin", "http://example.com")

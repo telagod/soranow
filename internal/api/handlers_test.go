@@ -12,7 +12,10 @@ import (
 func TestHandleModels(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewHandler(nil, nil, nil)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewHandler(db, nil, nil)
 
 	router := gin.New()
 	router.GET("/v1/models", handler.HandleModels)
@@ -56,7 +59,10 @@ func TestHandleModels(t *testing.T) {
 func TestHandleModels_ResponseFormat(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	handler := NewHandler(nil, nil, nil)
+	db := setupTestDB(t)
+	defer db.Close()
+
+	handler := NewHandler(db, nil, nil)
 
 	router := gin.New()
 	router.GET("/v1/models", handler.HandleModels)

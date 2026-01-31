@@ -16,8 +16,30 @@ type ChatCompletionRequest struct {
 
 // ChatMessage represents a message in the chat
 type ChatMessage struct {
-	Role    string `json:"role" binding:"required"`
-	Content string `json:"content" binding:"required"`
+	Role    string      `json:"role" binding:"required"`
+	Content interface{} `json:"content" binding:"required"`
+}
+
+// ContentPart represents a part of multimodal content
+type ContentPart struct {
+	Type     string    `json:"type"`
+	Text     string    `json:"text,omitempty"`
+	ImageURL *MediaURL `json:"image_url,omitempty"`
+	VideoURL *MediaURL `json:"video_url,omitempty"`
+}
+
+// MediaURL represents a URL reference for image or video
+type MediaURL struct {
+	URL    string `json:"url"`
+	Detail string `json:"detail,omitempty"`
+}
+
+// ParsedContent holds the extracted content from messages
+type ParsedContent struct {
+	Prompt        string
+	ImageData     string // Base64 encoded image data
+	VideoData     string // Base64 encoded video data
+	RemixTargetID string // ID for remix operations
 }
 
 // ChatCompletionResponse represents the OpenAI-compatible chat completion response

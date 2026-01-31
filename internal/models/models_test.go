@@ -95,7 +95,7 @@ func TestRequestLog_Creation(t *testing.T) {
 		Operation:   "generate_image",
 		RequestBody: `{"prompt": "test"}`,
 		StatusCode:  200,
-		DurationMS:  150,
+		DurationMs:  150,
 		CreatedAt:   now,
 	}
 

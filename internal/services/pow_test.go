@@ -68,9 +68,9 @@ func TestGeneratePowToken_DifferentDifficulties(t *testing.T) {
 	}
 }
 
-func TestHashSHA3_512(t *testing.T) {
+func TestHashSHA3_512String(t *testing.T) {
 	input := "hello world"
-	hash := HashSHA3_512(input)
+	hash := HashSHA3_512String(input)
 
 	if hash == "" {
 		t.Error("Expected non-empty hash")
@@ -82,14 +82,34 @@ func TestHashSHA3_512(t *testing.T) {
 	}
 
 	// Same input should produce same hash
-	hash2 := HashSHA3_512(input)
+	hash2 := HashSHA3_512String(input)
 	if hash != hash2 {
 		t.Error("Same input should produce same hash")
 	}
 
 	// Different input should produce different hash
-	hash3 := HashSHA3_512("different input")
+	hash3 := HashSHA3_512String("different input")
 	if hash == hash3 {
 		t.Error("Different input should produce different hash")
+	}
+}
+
+func TestHashSHA3_512(t *testing.T) {
+	input := []byte("hello world")
+	hash := HashSHA3_512(input)
+
+	if len(hash) == 0 {
+		t.Error("Expected non-empty hash")
+	}
+
+	// SHA3-512 produces 64 bytes
+	if len(hash) != 64 {
+		t.Errorf("Expected hash length 64 bytes, got %d", len(hash))
+	}
+
+	// Same input should produce same hash
+	hash2 := HashSHA3_512(input)
+	if string(hash) != string(hash2) {
+		t.Error("Same input should produce same hash")
 	}
 }

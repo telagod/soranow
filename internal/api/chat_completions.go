@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -60,12 +61,101 @@ func IsValidModel(model string) bool {
 
 // ExtractPromptFromMessages extracts the prompt from chat messages
 func ExtractPromptFromMessages(messages []ChatMessage) string {
+	parsed := ParseMessagesContent(messages)
+	return parsed.Prompt
+}
+
+// ParseMessagesContent parses messages and extracts all content types
+func ParseMessagesContent(messages []ChatMessage) *ParsedContent {
+	result := &ParsedContent{}
+
 	for i := len(messages) - 1; i >= 0; i-- {
-		if messages[i].Role == "user" {
-			return messages[i].Content
+		if messages[i].Role != "user" {
+			continue
+		}
+
+		content := messages[i].Content
+
+		switch v := content.(type) {
+		case string:
+			if result.Prompt == "" {
+				result.Prompt = v
+				// Check for remix_target_id in text
+				result.RemixTargetID = extractRemixTargetID(v)
+			}
+
+		case []interface{}:
+			for _, item := range v {
+				itemMap, ok := item.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				itemType, _ := itemMap["type"].(string)
+
+				switch itemType {
+				case "text":
+					if text, ok := itemMap["text"].(string); ok && result.Prompt == "" {
+						result.Prompt = text
+						result.RemixTargetID = extractRemixTargetID(text)
+					}
+
+				case "image_url":
+					if imageURL, ok := itemMap["image_url"].(map[string]interface{}); ok {
+						if url, ok := imageURL["url"].(string); ok {
+							if strings.HasPrefix(url, "data:image") && strings.Contains(url, "base64,") {
+								parts := strings.SplitN(url, "base64,", 2)
+								if len(parts) == 2 {
+									result.ImageData = parts[1]
+								}
+							}
+						}
+					}
+
+				case "video_url":
+					if videoURL, ok := itemMap["video_url"].(map[string]interface{}); ok {
+						if url, ok := videoURL["url"].(string); ok {
+							if strings.Contains(url, "base64,") {
+								parts := strings.SplitN(url, "base64,", 2)
+								if len(parts) == 2 {
+									result.VideoData = parts[1]
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Found user message, stop searching
+		if result.Prompt != "" {
+			break
 		}
 	}
+
+	return result
+}
+
+// extractRemixTargetID extracts remix_target_id from text
+// Supports formats: remix_target_id:xxx or remix:xxx (colon required, no space)
+var remixPattern = regexp.MustCompile(`(?:remix_target_id|remix):([a-zA-Z0-9_-]+)`)
+
+func extractRemixTargetID(text string) string {
+	matches := remixPattern.FindStringSubmatch(text)
+	if len(matches) >= 2 {
+		return matches[1]
+	}
 	return ""
+}
+
+// GetContentString returns the content as string for response
+func GetContentString(content interface{}) string {
+	switch v := content.(type) {
+	case string:
+		return v
+	default:
+		return ""
+	}
 }
 
 // HandleChatCompletions handles the /v1/chat/completions endpoint
@@ -92,9 +182,9 @@ func (h *Handler) HandleChatCompletions(c *gin.Context) {
 		return
 	}
 
-	// Extract prompt
-	prompt := ExtractPromptFromMessages(req.Messages)
-	if prompt == "" {
+	// Parse multimodal content
+	parsed := ParseMessagesContent(req.Messages)
+	if parsed.Prompt == "" {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error: ErrorDetail{
 				Message: "No user message found in messages",
@@ -108,21 +198,25 @@ func (h *Handler) HandleChatCompletions(c *gin.Context) {
 	responseID := fmt.Sprintf("chatcmpl-%d", time.Now().UnixNano())
 
 	if req.Stream {
-		h.handleStreamingResponse(c, req, prompt, responseID)
+		h.handleStreamingResponse(c, req, parsed, responseID)
 	} else {
-		h.handleNonStreamingResponse(c, req, prompt, responseID)
+		h.handleNonStreamingResponse(c, req, parsed, responseID)
 	}
 }
 
 // handleNonStreamingResponse handles non-streaming chat completion
-func (h *Handler) handleNonStreamingResponse(c *gin.Context, req ChatCompletionRequest, prompt, responseID string) {
+func (h *Handler) handleNonStreamingResponse(c *gin.Context, req ChatCompletionRequest, parsed *ParsedContent, responseID string) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Minute)
 	defer cancel()
 
 	isVideo := IsVideoModel(req.Model)
 
-	// Start generation
-	result, err := h.generationHandler.Generate(ctx, prompt, req.Model, false, nil)
+	// Start generation with multimodal support
+	result, err := h.generationHandler.GenerateWithMedia(
+		ctx, parsed.Prompt, req.Model,
+		parsed.ImageData, parsed.VideoData, parsed.RemixTargetID,
+		false, nil,
+	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: ErrorDetail{
@@ -152,9 +246,9 @@ func (h *Handler) handleNonStreamingResponse(c *gin.Context, req ChatCompletionR
 			},
 		},
 		Usage: &Usage{
-			PromptTokens:     len(strings.Fields(prompt)),
+			PromptTokens:     len(strings.Fields(parsed.Prompt)),
 			CompletionTokens: len(strings.Fields(content)),
-			TotalTokens:      len(strings.Fields(prompt)) + len(strings.Fields(content)),
+			TotalTokens:      len(strings.Fields(parsed.Prompt)) + len(strings.Fields(content)),
 		},
 	}
 
@@ -162,7 +256,7 @@ func (h *Handler) handleNonStreamingResponse(c *gin.Context, req ChatCompletionR
 }
 
 // handleStreamingResponse handles streaming chat completion (SSE)
-func (h *Handler) handleStreamingResponse(c *gin.Context, req ChatCompletionRequest, prompt, responseID string) {
+func (h *Handler) handleStreamingResponse(c *gin.Context, req ChatCompletionRequest, parsed *ParsedContent, responseID string) {
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
@@ -210,7 +304,11 @@ func (h *Handler) handleStreamingResponse(c *gin.Context, req ChatCompletionRequ
 	errChan := make(chan error, 1)
 
 	go func() {
-		result, err := h.generationHandler.Generate(ctx, prompt, req.Model, true, eventChan)
+		result, err := h.generationHandler.GenerateWithMedia(
+			ctx, parsed.Prompt, req.Model,
+			parsed.ImageData, parsed.VideoData, parsed.RemixTargetID,
+			true, eventChan,
+		)
 		if err != nil {
 			errChan <- err
 		} else {

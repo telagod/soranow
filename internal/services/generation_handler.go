@@ -239,6 +239,11 @@ func ParseModel(model string) *ModelConfig {
 
 // Generate starts a generation task and returns the result
 func (h *GenerationHandler) Generate(ctx context.Context, prompt, model string, stream bool, eventChan chan<- StreamEvent) (*GenerationResult, error) {
+	return h.GenerateWithMedia(ctx, prompt, model, "", "", "", stream, eventChan)
+}
+
+// GenerateWithMedia starts a generation task with optional media data
+func (h *GenerationHandler) GenerateWithMedia(ctx context.Context, prompt, model, imageData, videoData, remixTargetID string, stream bool, eventChan chan<- StreamEvent) (*GenerationResult, error) {
 	// Parse model configuration
 	modelCfg := ParseModel(model)
 
@@ -302,9 +307,17 @@ func (h *GenerationHandler) Generate(ctx context.Context, prompt, model string, 
 	var err error
 
 	if modelCfg.IsVideo {
-		// Check if prompt is in storyboard format
-		if IsStoryboardPrompt(prompt) {
-			// Format prompt for storyboard API
+		// Check for remix mode first
+		if remixTargetID != "" {
+			if stream && eventChan != nil {
+				eventChan <- StreamEvent{Type: "progress", Progress: 0, Content: "检测到 Remix 模式..."}
+			}
+			taskID, err = h.soraClient.RemixVideo(
+				prompt, accessToken, modelCfg.Orientation, remixTargetID,
+				modelCfg.NFrames, modelCfg.Model, proxyURL,
+			)
+		} else if IsStoryboardPrompt(prompt) {
+			// Check if prompt is in storyboard format
 			formattedPrompt := FormatStoryboardPrompt(prompt)
 			if stream && eventChan != nil {
 				eventChan <- StreamEvent{Type: "progress", Progress: 0, Content: "检测到分镜模式，使用 Storyboard API..."}
@@ -462,7 +475,7 @@ func (h *GenerationHandler) pollTaskResult(ctx context.Context, taskID, token st
 			if msg, ok := task["error_message"].(string); ok && msg != "" {
 				errMsg = msg
 			}
-			return nil, fmt.Errorf(errMsg)
+			return nil, fmt.Errorf("%s", errMsg)
 		}
 		// Still processing, continue polling
 	}

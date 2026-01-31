@@ -118,8 +118,8 @@ func TestSoraClient_MockGenerateImage(t *testing.T) {
 	defer server.Close()
 
 	client := NewSoraClient(server.URL, 30, nil)
-	
-	taskID, err := client.GenerateImage("test prompt", "fake_token", 360, 360, "", 0)
+
+	taskID, err := client.GenerateImage("test prompt", "fake_token", 360, 360, "", "")
 	if err != nil {
 		t.Fatalf("GenerateImage failed: %v", err)
 	}
@@ -128,28 +128,36 @@ func TestSoraClient_MockGenerateImage(t *testing.T) {
 	}
 }
 
-func TestSoraClient_GetTaskStatus(t *testing.T) {
+func TestSoraClient_FindTaskInImageTasks(t *testing.T) {
 	// Create mock server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		// API expects "task_responses" or "tasks" field, not "recent_tasks"
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"id":       "task_123",
-			"status":   "completed",
-			"progress": 100.0,
-			"result": map[string]interface{}{
-				"url": "https://example.com/result.png",
+			"task_responses": []map[string]interface{}{
+				{
+					"id":           "task_123",
+					"status":       "succeeded",
+					"progress_pct": 1.0,
+					"generations": []map[string]interface{}{
+						{"url": "https://example.com/result.png"},
+					},
+				},
 			},
 		})
 	}))
 	defer server.Close()
 
 	client := NewSoraClient(server.URL, 30, nil)
-	
-	status, err := client.GetTaskStatus("task_123", "fake_token", true, 0)
+
+	task, err := client.FindTaskInImageTasks("task_123", "fake_token", "")
 	if err != nil {
-		t.Fatalf("GetTaskStatus failed: %v", err)
+		t.Fatalf("FindTaskInImageTasks failed: %v", err)
 	}
-	if status.Status != "completed" {
-		t.Errorf("Expected status 'completed', got '%s'", status.Status)
+	if task == nil {
+		t.Fatal("Expected non-nil task")
+	}
+	if task["status"] != "succeeded" {
+		t.Errorf("Expected status 'succeeded', got '%v'", task["status"])
 	}
 }
