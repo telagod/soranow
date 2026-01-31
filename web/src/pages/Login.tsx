@@ -36,7 +36,7 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Sora2API</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">SoraNow</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">管理控制台</p>
         </div>
 

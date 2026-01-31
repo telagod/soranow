@@ -98,7 +98,7 @@ export function ManagePage() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
         <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between">
-          <h1 className="text-base font-semibold text-[var(--text-primary)]">Sora2API</h1>
+          <h1 className="text-base font-semibold text-[var(--text-primary)]">SoraNow</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}

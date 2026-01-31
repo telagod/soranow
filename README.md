@@ -1,6 +1,6 @@
-# Sora2API Go
+# SoraNow
 
-Sora2API 的 Go 语言重写版本，专注于高并发和轻量化设计。
+SoraNow - AI 视频生成平台，基于 Go 语言构建，专注于高并发和轻量化设计。
 
 ## 特性
 
@@ -10,20 +10,34 @@ Sora2API 的 Go 语言重写版本，专注于高并发和轻量化设计。
 - 🎨 图片/视频生成：支持 Sora 图片和视频生成
 - 🔐 Token 管理：支持多 Token 负载均衡
 - 📊 管理后台：内置 Web 管理界面
+- 🎬 故事模式：可视化分镜编辑器
+- 👤 角色一致性：创建和管理角色，保持视频中角色一致
+- 📚 模板库：20+ 专业预设模板
+- 🎨 风格预设：10 种视觉风格
 
 ## 快速开始
+
+### Docker 运行 (推荐)
+
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v ./config:/app/config \
+  -v ./data:/app/data \
+  teraccc/soranow:latest
+```
 
 ### 本地运行
 
 ```bash
 # 编译
-go build -o bin/sora2api ./cmd/server/
+go build -o bin/soranow ./cmd/server/
 
 # 运行
-./bin/sora2api -config config/setting.toml
+./bin/soranow -config config/setting.toml
 ```
 
-### Docker 运行
+### Docker Compose
 
 ```bash
 # 构建镜像
@@ -54,6 +68,16 @@ docker-compose up -d
 | `/api/config` | GET | 获取系统配置 |
 | `/api/config` | PUT | 更新系统配置 |
 
+### 角色 API
+
+| 端点 | 方法 | 描述 |
+|------|------|------|
+| `/api/characters` | GET | 获取角色列表 |
+| `/api/characters/upload` | POST | 上传角色视频 |
+| `/api/characters/:id/status` | GET | 获取处理状态 |
+| `/api/characters/finalize` | POST | 完成角色创建 |
+| `/api/characters/:id` | DELETE | 删除角色 |
+
 ### 其他端点
 
 | 端点 | 方法 | 描述 |
@@ -61,7 +85,6 @@ docker-compose up -d
 | `/health` | GET | 健康检查 |
 | `/` | GET | 登录页面 |
 | `/manage` | GET | 管理页面 |
-| `/generate` | GET | 生成页面 |
 
 ## 支持的模型
 
@@ -77,7 +100,7 @@ docker-compose up -d
 
 ```toml
 [global]
-api_key = "han1234"
+api_key = "your-api-key"
 admin_username = "admin"
 admin_password = ""
 
@@ -97,7 +120,7 @@ video_timeout = 3000
 ## 项目结构
 
 ```
-sora2api-go/
+soranow/
 ├── cmd/server/          # 入口
 ├── internal/
 │   ├── api/             # API 处理器
@@ -105,7 +128,8 @@ sora2api-go/
 │   ├── database/        # 数据库操作
 │   ├── models/          # 数据模型
 │   └── services/        # 核心服务
-├── static/              # 前端静态文件
+├── web/                 # 前端源码
+├── static/              # 前端构建产物
 ├── config/              # 配置文件
 ├── Dockerfile
 └── docker-compose.yml
@@ -117,11 +141,11 @@ sora2api-go/
 # 运行测试
 go test ./...
 
-# 运行测试 (详细输出)
-go test ./... -v
+# 编译后端
+go build -o bin/soranow ./cmd/server/
 
-# 编译
-go build -o bin/sora2api ./cmd/server/
+# 构建前端
+cd web && npm run build
 ```
 
 ## License
