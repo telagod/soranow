@@ -33,6 +33,7 @@ func SetupRouter(db *database.DB, lb *services.LoadBalancer, cm *services.Concur
 	// Static files
 	router.Static("/assets", "./static/dist/assets")
 	router.Static("/cache", "./data/cache")
+	router.Static("/static/js", "./static/js")
 	router.StaticFile("/generate", "./static/generate.html")
 
 	// Serve React SPA for frontend routes
