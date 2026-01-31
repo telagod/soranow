@@ -55,7 +55,7 @@ export function TokenTable({ onRefresh }: Props) {
     toast.info('正在测试 Token...')
     try {
       const res = await api.testToken(token.id)
-      if (res.success && res.status === 'success') {
+      if (res.success) {
         let msg = `Token 有效！用户: ${res.email || '未知'}`
         if (res.sora2_supported) {
           const remaining = (res.sora2_total_count || 0) - (res.sora2_redeemed_count || 0)

@@ -76,29 +76,131 @@ type ModelConfig struct {
 	Height      int
 }
 
+// Predefined model configurations (aligned with Python version)
+var modelConfigs = map[string]*ModelConfig{
+	// Image models
+	"sora-image": {
+		IsVideo: false,
+		Width:   360,
+		Height:  360,
+	},
+	"sora-image-landscape": {
+		IsVideo: false,
+		Width:   540,
+		Height:  360,
+	},
+	"sora-image-portrait": {
+		IsVideo: false,
+		Width:   360,
+		Height:  540,
+	},
+	// Video models with 10s duration (300 frames)
+	"sora-video-10s": {
+		IsVideo:     true,
+		Orientation: "landscape",
+		NFrames:     300,
+	},
+	"sora-video-landscape-10s": {
+		IsVideo:     true,
+		Orientation: "landscape",
+		NFrames:     300,
+	},
+	"sora-video-portrait-10s": {
+		IsVideo:     true,
+		Orientation: "portrait",
+		NFrames:     300,
+	},
+	// Video models with 15s duration (450 frames)
+	"sora-video-15s": {
+		IsVideo:     true,
+		Orientation: "landscape",
+		NFrames:     450,
+	},
+	"sora-video-landscape-15s": {
+		IsVideo:     true,
+		Orientation: "landscape",
+		NFrames:     450,
+	},
+	"sora-video-portrait-15s": {
+		IsVideo:     true,
+		Orientation: "portrait",
+		NFrames:     450,
+	},
+	// Video models with 25s duration (750 frames)
+	"sora-video-25s": {
+		IsVideo:     true,
+		Orientation: "landscape",
+		NFrames:     750,
+		Model:       "sy_8",
+		Size:        "small",
+	},
+	"sora-video-landscape-25s": {
+		IsVideo:     true,
+		Orientation: "landscape",
+		NFrames:     750,
+		Model:       "sy_8",
+		Size:        "small",
+	},
+	"sora-video-portrait-25s": {
+		IsVideo:     true,
+		Orientation: "portrait",
+		NFrames:     750,
+		Model:       "sy_8",
+		Size:        "small",
+	},
+}
+
 // ParseModel parses model string and returns configuration
 func ParseModel(model string) *ModelConfig {
+	modelLower := strings.ToLower(model)
+
+	// Check predefined configs first
+	if cfg, ok := modelConfigs[modelLower]; ok {
+		// Return a copy with defaults filled in
+		result := &ModelConfig{
+			IsVideo:     cfg.IsVideo,
+			Orientation: cfg.Orientation,
+			NFrames:     cfg.NFrames,
+			Model:       cfg.Model,
+			Size:        cfg.Size,
+			Width:       cfg.Width,
+			Height:      cfg.Height,
+		}
+		// Fill defaults for video
+		if result.IsVideo {
+			if result.Model == "" {
+				result.Model = "sy_8"
+			}
+			if result.Size == "" {
+				result.Size = "small"
+			}
+			if result.Orientation == "" {
+				result.Orientation = "landscape"
+			}
+		}
+		return result
+	}
+
+	// Fallback: parse model string dynamically
 	cfg := &ModelConfig{
 		IsVideo:     false,
 		Orientation: "landscape",
 		NFrames:     450,
 		Model:       "sy_8",
 		Size:        "small",
-		Width:       1024,
-		Height:      1024,
+		Width:       360,
+		Height:      360,
 	}
 
-	model = strings.ToLower(model)
-
 	// Image models
-	if strings.Contains(model, "image") || model == "gpt-image" || model == "gpt-image-1" {
+	if strings.Contains(modelLower, "image") || modelLower == "gpt-image" || modelLower == "gpt-image-1" {
 		cfg.IsVideo = false
-		if strings.Contains(model, "landscape") {
-			cfg.Width = 1792
-			cfg.Height = 1024
-		} else if strings.Contains(model, "portrait") {
-			cfg.Width = 1024
-			cfg.Height = 1792
+		if strings.Contains(modelLower, "landscape") {
+			cfg.Width = 540
+			cfg.Height = 360
+		} else if strings.Contains(modelLower, "portrait") {
+			cfg.Width = 360
+			cfg.Height = 540
 		}
 		return cfg
 	}
@@ -107,28 +209,28 @@ func ParseModel(model string) *ModelConfig {
 	cfg.IsVideo = true
 
 	// Orientation
-	if strings.Contains(model, "portrait") {
+	if strings.Contains(modelLower, "portrait") {
 		cfg.Orientation = "portrait"
 	} else {
 		cfg.Orientation = "landscape"
 	}
 
 	// Duration (frames)
-	if strings.Contains(model, "10s") {
+	if strings.Contains(modelLower, "10s") {
 		cfg.NFrames = 300
-	} else if strings.Contains(model, "15s") {
+	} else if strings.Contains(modelLower, "15s") {
 		cfg.NFrames = 450
-	} else if strings.Contains(model, "25s") || strings.Contains(model, "20s") {
+	} else if strings.Contains(modelLower, "25s") || strings.Contains(modelLower, "20s") {
 		cfg.NFrames = 750
 	}
 
 	// Pro model
-	if strings.Contains(model, "pro") {
+	if strings.Contains(modelLower, "pro") {
 		cfg.Model = "sy_ore"
 	}
 
 	// HD size
-	if strings.Contains(model, "hd") {
+	if strings.Contains(modelLower, "hd") {
 		cfg.Size = "large"
 	}
 
@@ -200,10 +302,23 @@ func (h *GenerationHandler) Generate(ctx context.Context, prompt, model string, 
 	var err error
 
 	if modelCfg.IsVideo {
-		taskID, err = h.soraClient.GenerateVideo(
-			prompt, accessToken, modelCfg.Orientation, "",
-			modelCfg.NFrames, "", modelCfg.Model, modelCfg.Size, proxyURL,
-		)
+		// Check if prompt is in storyboard format
+		if IsStoryboardPrompt(prompt) {
+			// Format prompt for storyboard API
+			formattedPrompt := FormatStoryboardPrompt(prompt)
+			if stream && eventChan != nil {
+				eventChan <- StreamEvent{Type: "progress", Progress: 0, Content: "检测到分镜模式，使用 Storyboard API..."}
+			}
+			taskID, err = h.soraClient.GenerateStoryboard(
+				formattedPrompt, accessToken, modelCfg.Orientation, "",
+				modelCfg.NFrames, proxyURL,
+			)
+		} else {
+			taskID, err = h.soraClient.GenerateVideo(
+				prompt, accessToken, modelCfg.Orientation, "",
+				modelCfg.NFrames, "", modelCfg.Model, modelCfg.Size, proxyURL,
+			)
+		}
 	} else {
 		taskID, err = h.soraClient.GenerateImage(
 			prompt, accessToken, modelCfg.Width, modelCfg.Height, "", proxyURL,
@@ -287,47 +402,50 @@ func (h *GenerationHandler) pollTaskResult(ctx context.Context, taskID, token st
 		// Wait before polling
 		time.Sleep(pollInterval)
 
-		// Check if task is still pending
-		pendingTask, err := h.soraClient.FindTaskInPending(taskID, token, proxyURL)
+		// Use recent_tasks for both image and video (more reliable, less Cloudflare issues)
+		task, err := h.soraClient.FindTaskInImageTasks(taskID, token, proxyURL)
 		if err != nil {
-			continue // Retry on error
+			continue
 		}
-
-		if pendingTask != nil {
-			// Task is still processing
-			progress := pendingTask.ProgressPct * 100
-			if progress > lastProgress {
-				lastProgress = progress
-				if stream && eventChan != nil {
-					eventChan <- StreamEvent{
-						Type:     "progress",
-						Progress: progress,
-						Content:  fmt.Sprintf("生成进度: %.0f%%", progress),
-					}
-				}
-			}
+		if task == nil {
 			continue
 		}
 
-		// Task not in pending, check if completed
-		if isVideo {
-			draft, err := h.soraClient.FindTaskInVideoDrafts(taskID, token, proxyURL)
-			if err != nil {
-				continue
-			}
-			if draft != nil && draft.VideoURL != "" {
-				videoURL := draft.VideoURL
+		// Check task status
+		status, _ := task["status"].(string)
+		progressPct, _ := task["progress_pct"].(float64)
 
-				// Try to get watermark-free URL
-				if h.config.WatermarkFree {
-					postID, wfURL, err := h.soraClient.PublishVideo(draft.ID, token, proxyURL)
-					if err == nil && wfURL != "" {
-						videoURL = wfURL
-						// Delete the post after getting URL
-						h.soraClient.DeletePost(postID, token, proxyURL)
+		// Update progress
+		progress := progressPct * 100
+		if progress > lastProgress {
+			lastProgress = progress
+			if stream && eventChan != nil {
+				eventChan <- StreamEvent{
+					Type:     "progress",
+					Progress: progress,
+					Content:  fmt.Sprintf("生成进度: %.0f%%", progress),
+				}
+			}
+		}
+
+		// Check if completed
+		if status == "succeeded" {
+			var urls []string
+
+			if isVideo {
+				// Extract video URL from generations
+				if gens, ok := task["generations"].([]interface{}); ok && len(gens) > 0 {
+					if gen, ok := gens[0].(map[string]interface{}); ok {
+						if videoURL, ok := gen["url"].(string); ok && videoURL != "" {
+							urls = append(urls, videoURL)
+						}
 					}
 				}
+			} else {
+				urls = ExtractImageURLs(task)
+			}
 
+			if len(urls) > 0 {
 				if stream && eventChan != nil {
 					eventChan <- StreamEvent{Type: "done", Progress: 100}
 				}
@@ -336,30 +454,17 @@ func (h *GenerationHandler) pollTaskResult(ctx context.Context, taskID, token st
 					TaskID:   taskID,
 					Status:   "completed",
 					Progress: 100,
-					URLs:     []string{videoURL},
+					URLs:     urls,
 				}, nil
 			}
-		} else {
-			imageTask, err := h.soraClient.FindTaskInImageTasks(taskID, token, proxyURL)
-			if err != nil {
-				continue
+		} else if status == "failed" {
+			errMsg := "生成失败"
+			if msg, ok := task["error_message"].(string); ok && msg != "" {
+				errMsg = msg
 			}
-			if imageTask != nil {
-				urls := ExtractImageURLs(imageTask)
-				if len(urls) > 0 {
-					if stream && eventChan != nil {
-						eventChan <- StreamEvent{Type: "done", Progress: 100}
-					}
-
-					return &GenerationResult{
-						TaskID:   taskID,
-						Status:   "completed",
-						Progress: 100,
-						URLs:     urls,
-					}, nil
-				}
-			}
+			return nil, fmt.Errorf(errMsg)
 		}
+		// Still processing, continue polling
 	}
 }
 

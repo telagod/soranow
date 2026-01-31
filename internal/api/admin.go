@@ -46,11 +46,17 @@ type AddTokenRequest struct {
 
 // UpdateTokenRequest represents update token request body
 type UpdateTokenRequest struct {
-	IsActive         *bool `json:"is_active"`
-	ImageEnabled     *bool `json:"image_enabled"`
-	VideoEnabled     *bool `json:"video_enabled"`
-	ImageConcurrency *int  `json:"image_concurrency"`
-	VideoConcurrency *int  `json:"video_concurrency"`
+	Token            *string `json:"token"`
+	SessionToken     *string `json:"session_token"`
+	RefreshToken     *string `json:"refresh_token"`
+	ClientID         *string `json:"client_id"`
+	ProxyURL         *string `json:"proxy_url"`
+	Remark           *string `json:"remark"`
+	IsActive         *bool   `json:"is_active"`
+	ImageEnabled     *bool   `json:"image_enabled"`
+	VideoEnabled     *bool   `json:"video_enabled"`
+	ImageConcurrency *int    `json:"image_concurrency"`
+	VideoConcurrency *int    `json:"video_concurrency"`
 }
 
 // UpdateConfigRequest represents update config request body
@@ -217,6 +223,24 @@ func (h *AdminHandler) HandleUpdateToken(c *gin.Context) {
 	}
 
 	// Update fields if provided
+	if req.Token != nil {
+		token.Token = *req.Token
+	}
+	if req.SessionToken != nil {
+		token.SessionToken = *req.SessionToken
+	}
+	if req.RefreshToken != nil {
+		token.RefreshToken = *req.RefreshToken
+	}
+	if req.ClientID != nil {
+		token.ClientID = *req.ClientID
+	}
+	if req.ProxyURL != nil {
+		token.ProxyURL = *req.ProxyURL
+	}
+	if req.Remark != nil {
+		token.Remark = *req.Remark
+	}
 	if req.IsActive != nil {
 		token.IsActive = *req.IsActive
 	}

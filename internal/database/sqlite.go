@@ -127,6 +127,24 @@ func (db *DB) InitSchema() error {
 		FOREIGN KEY (token_id) REFERENCES tokens(id) ON DELETE SET NULL
 	);
 
+	CREATE TABLE IF NOT EXISTS characters (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		cameo_id TEXT NOT NULL UNIQUE,
+		character_id TEXT,
+		username TEXT NOT NULL UNIQUE,
+		display_name TEXT NOT NULL,
+		profile_url TEXT,
+		instruction_set TEXT,
+		safety_instruction_set TEXT,
+		visibility TEXT DEFAULT 'private',
+		status TEXT DEFAULT 'processing',
+		token_id INTEGER NOT NULL,
+		error_message TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME,
+		FOREIGN KEY (token_id) REFERENCES tokens(id) ON DELETE CASCADE
+	);
+
 	INSERT OR IGNORE INTO system_config (id) VALUES (1);
 	`
 	_, err := db.conn.Exec(schema)
@@ -465,3 +483,137 @@ func (db *DB) GetTokensByIDs(ids []int64) ([]*models.Token, error) {
 	defer rows.Close()
 	return scanTokens(rows)
 }
+
+// Character Operations
+
+func (db *DB) CreateCharacter(char *models.Character) (int64, error) {
+	result, err := db.conn.Exec(`
+		INSERT INTO characters (cameo_id, character_id, username, display_name, profile_url, instruction_set, safety_instruction_set, visibility, status, token_id, error_message)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		char.CameoID, char.CharacterID, char.Username, char.DisplayName, char.ProfileURL,
+		char.InstructionSet, char.SafetyInstructionSet, char.Visibility, char.Status, char.TokenID, char.ErrorMessage)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) GetCharacterByID(id int64) (*models.Character, error) {
+	char := &models.Character{}
+	err := db.conn.QueryRow(`
+		SELECT id, cameo_id, COALESCE(character_id, ''), username, display_name, COALESCE(profile_url, ''),
+		COALESCE(instruction_set, ''), COALESCE(safety_instruction_set, ''), visibility, status, token_id,
+		COALESCE(error_message, ''), created_at, updated_at
+		FROM characters WHERE id = ?`, id).Scan(
+		&char.ID, &char.CameoID, &char.CharacterID, &char.Username, &char.DisplayName, &char.ProfileURL,
+		&char.InstructionSet, &char.SafetyInstructionSet, &char.Visibility, &char.Status, &char.TokenID,
+		&char.ErrorMessage, &char.CreatedAt, &char.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	return char, err
+}
+
+func (db *DB) GetCharacterByCameoID(cameoID string) (*models.Character, error) {
+	char := &models.Character{}
+	err := db.conn.QueryRow(`
+		SELECT id, cameo_id, COALESCE(character_id, ''), username, display_name, COALESCE(profile_url, ''),
+		COALESCE(instruction_set, ''), COALESCE(safety_instruction_set, ''), visibility, status, token_id,
+		COALESCE(error_message, ''), created_at, updated_at
+		FROM characters WHERE cameo_id = ?`, cameoID).Scan(
+		&char.ID, &char.CameoID, &char.CharacterID, &char.Username, &char.DisplayName, &char.ProfileURL,
+		&char.InstructionSet, &char.SafetyInstructionSet, &char.Visibility, &char.Status, &char.TokenID,
+		&char.ErrorMessage, &char.CreatedAt, &char.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	return char, err
+}
+
+func (db *DB) GetCharacterByUsername(username string) (*models.Character, error) {
+	char := &models.Character{}
+	err := db.conn.QueryRow(`
+		SELECT id, cameo_id, COALESCE(character_id, ''), username, display_name, COALESCE(profile_url, ''),
+		COALESCE(instruction_set, ''), COALESCE(safety_instruction_set, ''), visibility, status, token_id,
+		COALESCE(error_message, ''), created_at, updated_at
+		FROM characters WHERE username = ?`, username).Scan(
+		&char.ID, &char.CameoID, &char.CharacterID, &char.Username, &char.DisplayName, &char.ProfileURL,
+		&char.InstructionSet, &char.SafetyInstructionSet, &char.Visibility, &char.Status, &char.TokenID,
+		&char.ErrorMessage, &char.CreatedAt, &char.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	}
+	return char, err
+}
+
+func (db *DB) UpdateCharacter(char *models.Character) error {
+	now := time.Now()
+	char.UpdatedAt = &now
+	_, err := db.conn.Exec(`
+		UPDATE characters SET cameo_id=?, character_id=?, username=?, display_name=?, profile_url=?,
+		instruction_set=?, safety_instruction_set=?, visibility=?, status=?, token_id=?, error_message=?, updated_at=?
+		WHERE id=?`,
+		char.CameoID, char.CharacterID, char.Username, char.DisplayName, char.ProfileURL,
+		char.InstructionSet, char.SafetyInstructionSet, char.Visibility, char.Status, char.TokenID,
+		char.ErrorMessage, char.UpdatedAt, char.ID)
+	return err
+}
+
+func (db *DB) DeleteCharacter(id int64) error {
+	_, err := db.conn.Exec(`DELETE FROM characters WHERE id = ?`, id)
+	return err
+}
+
+func (db *DB) GetCharactersByTokenID(tokenID int64) ([]*models.Character, error) {
+	rows, err := db.conn.Query(`
+		SELECT id, cameo_id, COALESCE(character_id, ''), username, display_name, COALESCE(profile_url, ''),
+		COALESCE(instruction_set, ''), COALESCE(safety_instruction_set, ''), visibility, status, token_id,
+		COALESCE(error_message, ''), created_at, updated_at
+		FROM characters WHERE token_id = ? ORDER BY created_at DESC`, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanCharacters(rows)
+}
+
+func (db *DB) GetAllCharacters() ([]*models.Character, error) {
+	rows, err := db.conn.Query(`
+		SELECT id, cameo_id, COALESCE(character_id, ''), username, display_name, COALESCE(profile_url, ''),
+		COALESCE(instruction_set, ''), COALESCE(safety_instruction_set, ''), visibility, status, token_id,
+		COALESCE(error_message, ''), created_at, updated_at
+		FROM characters ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanCharacters(rows)
+}
+
+func (db *DB) GetFinalizedCharacters() ([]*models.Character, error) {
+	rows, err := db.conn.Query(`
+		SELECT id, cameo_id, COALESCE(character_id, ''), username, display_name, COALESCE(profile_url, ''),
+		COALESCE(instruction_set, ''), COALESCE(safety_instruction_set, ''), visibility, status, token_id,
+		COALESCE(error_message, ''), created_at, updated_at
+		FROM characters WHERE status = 'finalized' ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanCharacters(rows)
+}
+
+func scanCharacters(rows *sql.Rows) ([]*models.Character, error) {
+	var characters []*models.Character
+	for rows.Next() {
+		char := &models.Character{}
+		if err := rows.Scan(&char.ID, &char.CameoID, &char.CharacterID, &char.Username, &char.DisplayName,
+			&char.ProfileURL, &char.InstructionSet, &char.SafetyInstructionSet, &char.Visibility,
+			&char.Status, &char.TokenID, &char.ErrorMessage, &char.CreatedAt, &char.UpdatedAt); err != nil {
+			return nil, err
+		}
+		characters = append(characters, char)
+	}
+	return characters, rows.Err()
+}
+

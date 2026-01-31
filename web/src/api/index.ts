@@ -39,8 +39,8 @@ export interface TokenData {
   token: string
   email: string
   name: string
-  st?: string
-  rt?: string
+  session_token?: string
+  refresh_token?: string
   client_id?: string
   proxy_url?: string
   remark?: string
@@ -81,6 +81,31 @@ export interface LogEntry {
   created_at: string
 }
 
+export interface CharacterData {
+  id: number
+  cameo_id: string
+  character_id: string
+  username: string
+  display_name: string
+  profile_url: string
+  instruction_set: string
+  safety_instruction_set: string
+  visibility: 'private' | 'public'
+  status: 'processing' | 'finalized' | 'failed'
+  token_id: number
+  error_message?: string
+  created_at: string
+  updated_at?: string
+}
+
+export interface SearchCharacterResult {
+  character_id: string
+  username: string
+  display_name: string
+  profile_url: string
+  is_owner: boolean
+}
+
 export const api = {
   // Auth
   login: (username: string, password: string) =>
@@ -109,8 +134,8 @@ export const api = {
   addToken: (data: {
     token: string
     email?: string
-    st?: string
-    rt?: string
+    session_token?: string
+    refresh_token?: string
     client_id?: string
     proxy_url?: string
     remark?: string
@@ -126,8 +151,8 @@ export const api = {
 
   updateToken: (id: number, data: Partial<{
     token: string
-    st: string
-    rt: string
+    session_token: string
+    refresh_token: string
     client_id: string
     proxy_url: string
     remark: string
@@ -312,4 +337,103 @@ export const api = {
     request<{ success: boolean; message: string }>(`/api/tasks/${taskId}/cancel`, {
       method: 'POST',
     }),
+
+  // ========== Character Management ==========
+
+  // Get all characters
+  getCharacters: () =>
+    request<{ characters: CharacterData[] }>('/api/characters'),
+
+  // Get single character
+  getCharacter: (id: number) =>
+    request<{ character: CharacterData }>(`/api/characters/${id}`),
+
+  // Upload character video
+  uploadCharacterVideo: (data: {
+    token_id: number
+    video_data: string // Base64 encoded
+    timestamps?: string
+    username: string
+  }) =>
+    request<{ success: boolean; character: CharacterData; cameo_id: string }>('/api/characters/upload', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Get cameo processing status
+  getCameoStatus: (id: number) =>
+    request<{ status: string; profile_url: string; character: CharacterData }>(`/api/characters/${id}/status`),
+
+  // Check username availability
+  checkUsername: (username: string, tokenId: number) =>
+    request<{ available: boolean; reason?: string }>(`/api/characters/username/check?username=${encodeURIComponent(username)}&token_id=${tokenId}`),
+
+  // Finalize character
+  finalizeCharacter: (data: {
+    character_id: number
+    username: string
+    display_name: string
+    instruction_set?: string
+    safety_instruction_set?: string
+    visibility?: string
+  }) =>
+    request<{ success: boolean; character: CharacterData }>('/api/characters/finalize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete character
+  deleteCharacter: (id: number) =>
+    request<{ success: boolean; message: string }>(`/api/characters/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Search public characters
+  searchCharacters: (query: string, tokenId: number) =>
+    request<{ characters: SearchCharacterResult[] }>(`/api/characters/search?q=${encodeURIComponent(query)}&token_id=${tokenId}`),
+
+  // Sync characters from Sora API
+  syncCharacters: (tokenId: number) =>
+    request<{ success: boolean; synced: number; total: number }>('/api/characters/sync', {
+      method: 'POST',
+      body: JSON.stringify({ token_id: tokenId }),
+    }),
+
+  // ========== Generation ==========
+
+  // Generate video
+  generateVideo: (data: {
+    token_id: number
+    prompt: string
+    duration?: number
+    aspect_ratio?: string
+    model?: string
+    cameo_ids?: string[]
+    reference_image?: string
+  }) =>
+    request<{ success: boolean; generation_id: string; message?: string }>('/api/generate/video', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Generate image
+  generateImage: (data: {
+    token_id: number
+    prompt: string
+    size?: string
+    model?: string
+  }) =>
+    request<{ success: boolean; image_url: string; message?: string }>('/api/generate/image', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Get generation status
+  getGenerationStatus: (generationId: string, tokenId: number) =>
+    request<{
+      status: string
+      progress?: number
+      video_url?: string
+      error?: string
+    }>(`/api/generate/${generationId}/status?token_id=${tokenId}`),
 }

@@ -1,279 +1,158 @@
 import { useState, useEffect } from 'react'
-import { Loader2, Image, Video, Sparkles } from 'lucide-react'
+import { Sparkles, Film, User } from 'lucide-react'
+import { api, type TokenData } from '../api'
 import { useToast } from './Toast'
-import { api } from '../api'
+import { QuickGenerate } from './generate/QuickGenerate'
+import { StoryEditor } from './generate/StoryEditor'
+import { CharacterManager } from './generate/CharacterManager'
+import { ResultGallery, type GenerationResult } from './generate/ResultGallery'
 
-type GenerationType = 'image' | 'video'
-
-interface GenerationResult {
-  type: GenerationType
-  url: string
-  prompt: string
-  model: string
-  timestamp: number
-}
+type TabType = 'quick' | 'story' | 'characters'
 
 export function GeneratePanel() {
-  const [prompt, setPrompt] = useState('')
-  const [type, setType] = useState<GenerationType>('image')
-  const [model, setModel] = useState('gpt-image')
-  const [generating, setGenerating] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>('quick')
+  const [tokens, setTokens] = useState<TokenData[]>([])
   const [results, setResults] = useState<GenerationResult[]>([])
-  const [apiKey, setApiKey] = useState('')
-  const [baseUrl, setBaseUrl] = useState(window.location.origin)
+  const [loading, setLoading] = useState(true)
   const toast = useToast()
 
-  // Load API key from config on mount
+  // Load tokens on mount
   useEffect(() => {
-    api.getConfig().then(config => {
-      if (config.api_key) {
-        setApiKey(config.api_key)
-      }
-    }).catch(() => {
-      // Ignore error, user can enter API key manually
-    })
+    loadTokens()
   }, [])
 
-  const imageModels = [
-    { id: 'gpt-image', name: 'GPT Image (1:1)' },
-    { id: 'gpt-image-landscape', name: 'GPT Image (横向)' },
-    { id: 'gpt-image-portrait', name: 'GPT Image (纵向)' },
-  ]
+  // Load saved results from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('generation_results')
+    if (saved) {
+      try {
+        setResults(JSON.parse(saved))
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, [])
 
-  const videoModels = [
-    { id: 'sora2-landscape-10s', name: 'Sora2 横向 10s' },
-    { id: 'sora2-landscape-15s', name: 'Sora2 横向 15s' },
-    { id: 'sora2-landscape-25s', name: 'Sora2 横向 25s' },
-    { id: 'sora2-portrait-10s', name: 'Sora2 纵向 10s' },
-    { id: 'sora2-portrait-15s', name: 'Sora2 纵向 15s' },
-    { id: 'sora2-portrait-25s', name: 'Sora2 纵向 25s' },
-    { id: 'sora2pro-landscape-10s', name: 'Sora2 Pro 横向 10s' },
-    { id: 'sora2pro-landscape-15s', name: 'Sora2 Pro 横向 15s' },
-    { id: 'sora2pro-portrait-10s', name: 'Sora2 Pro 纵向 10s' },
-    { id: 'sora2pro-portrait-15s', name: 'Sora2 Pro 纵向 15s' },
-  ]
+  // Save results to localStorage
+  useEffect(() => {
+    if (results.length > 0) {
+      localStorage.setItem('generation_results', JSON.stringify(results.slice(0, 50))) // Keep last 50
+    }
+  }, [results])
 
-  const handleTypeChange = (newType: GenerationType) => {
-    setType(newType)
-    setModel(newType === 'image' ? 'gpt-image' : 'sora2-landscape-15s')
+  const loadTokens = async () => {
+    try {
+      const data = await api.getTokens()
+      setTokens(data.tokens || [])
+    } catch (err: any) {
+      toast.error(err.message || '加载 Token 失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      toast.error('请输入提示词')
-      return
-    }
-    if (!apiKey.trim()) {
-      toast.error('请输入 API Key')
-      return
-    }
+  const handleResult = (result: GenerationResult) => {
+    setResults(prev => [result, ...prev])
+  }
 
-    setGenerating(true)
-    try {
-      const response = await fetch(`${baseUrl}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: prompt }],
-          stream: false,
-        }),
+  const handleDeleteResult = (id: string) => {
+    setResults(prev => prev.filter(r => r.id !== id))
+  }
+
+  const handleClearResults = () => {
+    if (confirm('确定要清空所有生成结果吗？')) {
+      setResults([])
+      localStorage.removeItem('generation_results')
+    }
+  }
+
+  const handleStoryComplete = (storyResults: { url: string; shotId: string }[]) => {
+    // Add story results to gallery
+    storyResults.forEach((r, index) => {
+      handleResult({
+        id: r.shotId,
+        type: 'video',
+        url: r.url,
+        prompt: `故事镜头 ${index + 1}`,
+        model: 'Sora',
+        timestamp: Date.now(),
       })
+    })
+  }
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error?.message || `HTTP ${response.status}`)
-      }
+  const tabs = [
+    { id: 'quick' as TabType, label: '快速生成', icon: Sparkles },
+    { id: 'story' as TabType, label: '故事模式', icon: Film },
+    { id: 'characters' as TabType, label: '角色管理', icon: User },
+  ]
 
-      const data = await response.json()
-      const content = data.choices?.[0]?.message?.content || ''
-
-      // Extract URL from markdown
-      const urlMatch = content.match(/!\[.*?\]\((https?:\/\/[^\)]+)\)/)
-      if (urlMatch) {
-        setResults(prev => [{
-          type,
-          url: urlMatch[1],
-          prompt,
-          model,
-          timestamp: Date.now(),
-        }, ...prev])
-        toast.success('生成成功')
-      } else {
-        toast.error('未能获取生成结果')
-      }
-    } catch (err: any) {
-      toast.error(err.message || '生成失败')
-    } finally {
-      setGenerating(false)
-    }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[500px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)]" />
+      </div>
+    )
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {/* Left Panel - Controls */}
-      <div className="lg:col-span-1 space-y-4">
-        {/* API Settings */}
-        <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
-          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">API 设置</h3>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Base URL</label>
-              <input
-                type="text"
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] font-mono"
-                placeholder="https://your-api.com"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">API Key</label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] font-mono"
-                placeholder="sk-..."
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Generation Settings */}
-        <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
-          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">生成设置</h3>
-          <div className="space-y-3">
-            {/* Type Toggle */}
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">类型</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleTypeChange('image')}
-                  className={`flex-1 h-9 flex items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
-                    type === 'image'
-                      ? 'bg-[var(--accent)] text-white'
-                      : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  <Image className="w-4 h-4" />
-                  图片
-                </button>
-                <button
-                  onClick={() => handleTypeChange('video')}
-                  className={`flex-1 h-9 flex items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
-                    type === 'video'
-                      ? 'bg-[var(--accent)] text-white'
-                      : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  视频
-                </button>
-              </div>
-            </div>
-
-            {/* Model Select */}
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">模型</label>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-              >
-                {(type === 'image' ? imageModels : videoModels).map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Prompt */}
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">提示词</label>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] resize-none"
-                placeholder="描述你想要生成的内容..."
-              />
-            </div>
-
-            {/* Generate Button */}
+    <div className="h-full flex flex-col">
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-1 p-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+        {tabs.map((tab) => {
+          const Icon = tab.icon
+          return (
             <button
-              onClick={handleGenerate}
-              disabled={generating || !prompt.trim() || !apiKey.trim()}
-              className="w-full h-10 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${activeTab === tab.id
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                }
+              `}
             >
-              {generating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  生成中...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  开始生成
-                </>
-              )}
+              <Icon className="w-4 h-4" />
+              {tab.label}
             </button>
-          </div>
-        </div>
+          )
+        })}
       </div>
 
-      {/* Right Panel - Results */}
-      <div className="lg:col-span-2">
-        <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4 min-h-[500px]">
-          <h3 className="text-sm font-medium text-[var(--text-primary)] mb-3">生成结果</h3>
+      {/* Tab Content */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'quick' && (
+          <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-0">
+            {/* Left Panel - Quick Generate */}
+            <div className="lg:col-span-1 p-4 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg-secondary)]">
+              <QuickGenerate tokens={tokens} onResult={handleResult} />
+            </div>
 
-          {results.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[400px] text-[var(--text-muted)]">
-              <Sparkles className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-sm">暂无生成结果</p>
-              <p className="text-xs mt-1">输入提示词开始生成</p>
+            {/* Right Panel - Results */}
+            <div className="lg:col-span-2 p-4 overflow-y-auto">
+              <ResultGallery
+                results={results}
+                onDelete={handleDeleteResult}
+                onClear={handleClearResults}
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {results.map((result, index) => (
-                <div key={index} className="bg-[var(--bg-tertiary)] rounded-lg overflow-hidden border border-[var(--border)]">
-                  {result.type === 'image' ? (
-                    <img
-                      src={result.url}
-                      alt={result.prompt}
-                      className="w-full aspect-square object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <video
-                      src={result.url}
-                      controls
-                      className="w-full aspect-video"
-                    />
-                  )}
-                  <div className="p-3">
-                    <p className="text-xs text-[var(--text-secondary)] line-clamp-2" title={result.prompt}>
-                      {result.prompt}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-[var(--text-muted)]">{result.model}</span>
-                      <a
-                        href={result.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-[var(--accent)] hover:underline"
-                      >
-                        下载
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {activeTab === 'story' && (
+          <div className="h-full bg-[var(--bg-secondary)]">
+            <StoryEditor
+              tokens={tokens}
+              onGenerationComplete={handleStoryComplete}
+            />
+          </div>
+        )}
+
+        {activeTab === 'characters' && (
+          <div className="h-full p-4 overflow-y-auto bg-[var(--bg-secondary)]">
+            <CharacterManager tokens={tokens} />
+          </div>
+        )}
       </div>
     </div>
   )

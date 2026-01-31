@@ -9,6 +9,8 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	http2 "github.com/bogdanfinn/fhttp"
@@ -29,6 +31,57 @@ var MobileUserAgents = []string{
 	"Sora/1.2026.007 (Android 15; Pixel 8 Pro; build 2600700)",
 	"Sora/1.2026.007 (Android 14; Pixel 7; build 2600700)",
 	"Sora/1.2026.007 (Android 15; 2211133C; build 2600700)",
+}
+
+// Storyboard pattern for detecting storyboard prompts
+var storyboardPattern = regexp.MustCompile(`\[\d+(?:\.\d+)?s\]`)
+
+// IsStoryboardPrompt checks if the prompt is in storyboard format
+// Format: [time]prompt or [time]prompt\n[time]prompt
+// Example: [5.0s]猫猫从飞机上跳伞 [5.0s]猫猫降落
+func IsStoryboardPrompt(prompt string) bool {
+	if prompt == "" {
+		return false
+	}
+	matches := storyboardPattern.FindAllString(prompt, -1)
+	return len(matches) >= 1
+}
+
+// FormatStoryboardPrompt converts storyboard format prompt to API format
+// Input: 猫猫的奇妙冒险\n[5.0s]猫猫从飞机上跳伞 [5.0s]猫猫降落
+// Output: current timeline:\nShot 1:...\n\ninstructions:\n猫猫的奇妙冒险
+func FormatStoryboardPrompt(prompt string) string {
+	// Match [time]content pattern
+	pattern := regexp.MustCompile(`\[(\d+(?:\.\d+)?)s\]\s*([^\[]+)`)
+	matches := pattern.FindAllStringSubmatch(prompt, -1)
+
+	if len(matches) == 0 {
+		return prompt
+	}
+
+	// Extract instructions (content before first [time])
+	firstBracketPos := strings.Index(prompt, "[")
+	instructions := ""
+	if firstBracketPos > 0 {
+		instructions = strings.TrimSpace(prompt[:firstBracketPos])
+	}
+
+	// Format shots
+	var formattedShots []string
+	for idx, match := range matches {
+		duration := match[1]
+		scene := strings.TrimSpace(match[2])
+		shot := fmt.Sprintf("Shot %d:\nduration: %ssec\nScene: %s", idx+1, duration, scene)
+		formattedShots = append(formattedShots, shot)
+	}
+
+	timeline := strings.Join(formattedShots, "\n\n")
+
+	// If there are instructions, add them
+	if instructions != "" {
+		return fmt.Sprintf("current timeline:\n%s\n\ninstructions:\n%s", timeline, instructions)
+	}
+	return timeline
 }
 
 // TaskStatus represents the status of a generation task
@@ -81,11 +134,11 @@ func NewSoraClient(baseURL string, timeout int, httpClient *http.Client) *SoraCl
 		}
 	}
 
-	// Create TLS client with Chrome profile to bypass Cloudflare
+	// Create TLS client with Firefox profile to bypass Cloudflare
 	jar := tls_client.NewCookieJar()
 	options := []tls_client.HttpClientOption{
 		tls_client.WithTimeoutSeconds(timeout),
-		tls_client.WithClientProfile(profiles.Chrome_131),
+		tls_client.WithClientProfile(profiles.Firefox_132),
 		tls_client.WithNotFollowRedirects(),
 		tls_client.WithCookieJar(jar),
 	}
@@ -175,6 +228,31 @@ func (c *SoraClient) doTLSRequest(method, urlStr string, body []byte, headers ma
 		return nil, 0, err
 	}
 
+	// Set default headers for Cloudflare bypass
+	req.Header = http2.Header{
+		"accept":          {"application/json, text/plain, */*"},
+		"accept-language": {"en-US,en;q=0.9"},
+		"origin":          {"https://sora.chatgpt.com"},
+		"referer":         {"https://sora.chatgpt.com/"},
+		"sec-fetch-dest":  {"empty"},
+		"sec-fetch-mode":  {"cors"},
+		"sec-fetch-site":  {"same-origin"},
+		http2.HeaderOrderKey: {
+			"accept",
+			"accept-language",
+			"authorization",
+			"content-type",
+			"origin",
+			"referer",
+			"sec-fetch-dest",
+			"sec-fetch-mode",
+			"sec-fetch-site",
+			"user-agent",
+			"openai-sentinel-token",
+		},
+	}
+
+	// Override with provided headers
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -293,10 +371,59 @@ func (c *SoraClient) BuildVideoPayload(prompt, orientation, mediaID string, nFra
 	}
 
 	if styleID != "" {
-		payload["style_id"] = styleID
+		payload["style_id"] = strings.ToLower(styleID)
 	}
 
 	return payload
+}
+
+// BuildRemixPayload builds the payload for remix video generation
+func (c *SoraClient) BuildRemixPayload(prompt, orientation, remixTargetID string, nFrames int, model string) map[string]interface{} {
+	return map[string]interface{}{
+		"kind":             "video",
+		"prompt":           prompt,
+		"inpaint_items":    []map[string]interface{}{},
+		"remix_target_id":  remixTargetID,
+		"cameo_ids":        []string{},
+		"cameo_replacements": map[string]interface{}{},
+		"model":            model,
+		"orientation":      orientation,
+		"n_frames":         nFrames,
+	}
+}
+
+// BuildStoryboardPayload builds the payload for storyboard video generation
+func (c *SoraClient) BuildStoryboardPayload(prompt, orientation, mediaID string, nFrames int) map[string]interface{} {
+	inpaintItems := []map[string]interface{}{}
+
+	if mediaID != "" {
+		inpaintItems = []map[string]interface{}{
+			{
+				"kind":      "upload",
+				"upload_id": mediaID,
+			},
+		}
+	}
+
+	return map[string]interface{}{
+		"kind":               "video",
+		"prompt":             prompt,
+		"title":              "Draft your video",
+		"orientation":        orientation,
+		"size":               "small",
+		"n_frames":           nFrames,
+		"storyboard_id":      nil,
+		"inpaint_items":      inpaintItems,
+		"remix_target_id":    nil,
+		"model":              "sy_8",
+		"metadata":           nil,
+		"style_id":           nil,
+		"cameo_ids":          nil,
+		"cameo_replacements": nil,
+		"audio_caption":      nil,
+		"audio_transcript":   nil,
+		"video_caption":      nil,
+	}
 }
 
 // makeRequest makes an HTTP request to the Sora API using TLS client
@@ -359,6 +486,54 @@ func (c *SoraClient) GenerateVideo(prompt, token, orientation, mediaID string, n
 	payload := c.BuildVideoPayload(prompt, orientation, mediaID, nFrames, styleID, model, size)
 
 	respBody, statusCode, err := c.makeRequest("POST", "/nf/create", token, payload, sentinelToken, proxyURL)
+	if err != nil {
+		return "", err
+	}
+
+	if statusCode >= 400 {
+		return "", fmt.Errorf("API error %d: %s", statusCode, string(respBody))
+	}
+
+	return ParseTaskResponse(respBody)
+}
+
+// RemixVideo starts a remix video generation task based on existing video
+func (c *SoraClient) RemixVideo(prompt, token, orientation, remixTargetID string, nFrames int, model string, proxyURL string) (string, error) {
+	// Generate sentinel token
+	sentinelToken, err := c.GenerateSentinelToken(token, proxyURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate sentinel token: %v", err)
+	}
+
+	if model == "" {
+		model = "sy_8"
+	}
+
+	payload := c.BuildRemixPayload(prompt, orientation, remixTargetID, nFrames, model)
+
+	respBody, statusCode, err := c.makeRequest("POST", "/nf/create", token, payload, sentinelToken, proxyURL)
+	if err != nil {
+		return "", err
+	}
+
+	if statusCode >= 400 {
+		return "", fmt.Errorf("API error %d: %s", statusCode, string(respBody))
+	}
+
+	return ParseTaskResponse(respBody)
+}
+
+// GenerateStoryboard starts a storyboard video generation task
+func (c *SoraClient) GenerateStoryboard(prompt, token, orientation, mediaID string, nFrames int, proxyURL string) (string, error) {
+	// Generate sentinel token
+	sentinelToken, err := c.GenerateSentinelToken(token, proxyURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate sentinel token: %v", err)
+	}
+
+	payload := c.BuildStoryboardPayload(prompt, orientation, mediaID, nFrames)
+
+	respBody, statusCode, err := c.makeRequest("POST", "/nf/create/storyboard", token, payload, sentinelToken, proxyURL)
 	if err != nil {
 		return "", err
 	}
@@ -447,9 +622,13 @@ func (c *SoraClient) GetImageTasks(token string, limit int, proxyURL string) ([]
 		return nil, err
 	}
 
-	tasks, ok := result["tasks"].([]interface{})
+	// Try "task_responses" first (new API format), then "tasks" (old format)
+	tasks, ok := result["task_responses"].([]interface{})
 	if !ok {
-		return []map[string]interface{}{}, nil
+		tasks, ok = result["tasks"].([]interface{})
+		if !ok {
+			return []map[string]interface{}{}, nil
+		}
 	}
 
 	var taskList []map[string]interface{}
@@ -566,6 +745,12 @@ func ExtractImageURLs(task map[string]interface{}) []string {
 	if generations, ok := task["generations"].([]interface{}); ok {
 		for _, gen := range generations {
 			if g, ok := gen.(map[string]interface{}); ok {
+				// Try direct url field first (new API format)
+				if imgURL, ok := g["url"].(string); ok && imgURL != "" {
+					urls = append(urls, imgURL)
+					continue
+				}
+				// Try media.url (old API format)
 				if media, ok := g["media"].(map[string]interface{}); ok {
 					if imgURL, ok := media["url"].(string); ok {
 						urls = append(urls, imgURL)
@@ -623,4 +808,287 @@ func (c *SoraClient) DeletePost(postID, token string, proxyURL string) error {
 	}
 
 	return nil
+}
+
+// ========== Character (Cameo) API Methods ==========
+
+// UploadCharacterVideo uploads a video for character creation and returns cameo_id
+func (c *SoraClient) UploadCharacterVideo(videoData []byte, token string, timestamps string, proxyURL string) (string, error) {
+	// Generate sentinel token
+	sentinelToken, err := c.GenerateSentinelToken(token, proxyURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate sentinel token: %v", err)
+	}
+
+	// First, upload the video file
+	uploadPayload := map[string]interface{}{
+		"file_size": len(videoData),
+		"file_type": "video/mp4",
+	}
+
+	respBody, statusCode, err := c.makeRequest("POST", "/cameo/upload/init", token, uploadPayload, sentinelToken, proxyURL)
+	if err != nil {
+		return "", fmt.Errorf("upload init failed: %v", err)
+	}
+
+	if statusCode >= 400 {
+		return "", fmt.Errorf("upload init failed with status %d: %s", statusCode, string(respBody))
+	}
+
+	var initResult map[string]interface{}
+	if err := json.Unmarshal(respBody, &initResult); err != nil {
+		return "", fmt.Errorf("failed to parse upload init response: %v", err)
+	}
+
+	uploadURL, _ := initResult["upload_url"].(string)
+	uploadID, _ := initResult["upload_id"].(string)
+
+	if uploadURL == "" || uploadID == "" {
+		return "", errors.New("missing upload_url or upload_id in response")
+	}
+
+	// Upload the actual video data
+	headers := map[string]string{
+		"Content-Type": "video/mp4",
+	}
+	_, statusCode, err = c.doTLSRequest("PUT", uploadURL, videoData, headers, proxyURL)
+	if err != nil {
+		return "", fmt.Errorf("video upload failed: %v", err)
+	}
+
+	if statusCode >= 400 {
+		return "", fmt.Errorf("video upload failed with status %d", statusCode)
+	}
+
+	// Create the cameo with the uploaded video
+	cameoPayload := map[string]interface{}{
+		"upload_id":  uploadID,
+		"timestamps": timestamps,
+	}
+
+	respBody, statusCode, err = c.makeRequest("POST", "/cameo/create", token, cameoPayload, sentinelToken, proxyURL)
+	if err != nil {
+		return "", fmt.Errorf("cameo create failed: %v", err)
+	}
+
+	if statusCode >= 400 {
+		return "", fmt.Errorf("cameo create failed with status %d: %s", statusCode, string(respBody))
+	}
+
+	var cameoResult map[string]interface{}
+	if err := json.Unmarshal(respBody, &cameoResult); err != nil {
+		return "", fmt.Errorf("failed to parse cameo create response: %v", err)
+	}
+
+	cameoID, _ := cameoResult["cameo_id"].(string)
+	if cameoID == "" {
+		if id, ok := cameoResult["id"].(string); ok {
+			cameoID = id
+		}
+	}
+
+	if cameoID == "" {
+		return "", errors.New("no cameo_id in response")
+	}
+
+	return cameoID, nil
+}
+
+// GetCameoStatus gets the processing status of a cameo
+func (c *SoraClient) GetCameoStatus(cameoID, token string, proxyURL string) (string, string, error) {
+	endpoint := fmt.Sprintf("/cameo/%s", cameoID)
+
+	respBody, statusCode, err := c.makeRequest("GET", endpoint, token, nil, "", proxyURL)
+	if err != nil {
+		return "", "", err
+	}
+
+	if statusCode >= 400 {
+		return "", "", fmt.Errorf("get cameo status failed with status %d: %s", statusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return "", "", err
+	}
+
+	status, _ := result["status"].(string)
+	profileURL, _ := result["profile_url"].(string)
+
+	return status, profileURL, nil
+}
+
+// CheckUsernameAvailable checks if a username is available for character creation
+func (c *SoraClient) CheckUsernameAvailable(username, token string, proxyURL string) (bool, error) {
+	endpoint := fmt.Sprintf("/cameo/username/check?username=%s", url.QueryEscape(username))
+
+	respBody, statusCode, err := c.makeRequest("GET", endpoint, token, nil, "", proxyURL)
+	if err != nil {
+		return false, err
+	}
+
+	if statusCode >= 400 {
+		return false, fmt.Errorf("username check failed with status %d: %s", statusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return false, err
+	}
+
+	available, _ := result["available"].(bool)
+	return available, nil
+}
+
+// FinalizeCharacter finalizes a cameo into a character with username and settings
+func (c *SoraClient) FinalizeCharacter(cameoID, username, displayName, instructionSet, safetyInstructionSet, visibility, token string, proxyURL string) (string, string, error) {
+	// Generate sentinel token
+	sentinelToken, err := c.GenerateSentinelToken(token, proxyURL)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate sentinel token: %v", err)
+	}
+
+	payload := map[string]interface{}{
+		"cameo_id":               cameoID,
+		"username":               username,
+		"display_name":           displayName,
+		"instruction_set":        instructionSet,
+		"safety_instruction_set": safetyInstructionSet,
+		"visibility":             visibility,
+	}
+
+	respBody, statusCode, err := c.makeRequest("POST", "/cameo/finalize", token, payload, sentinelToken, proxyURL)
+	if err != nil {
+		return "", "", fmt.Errorf("finalize failed: %v", err)
+	}
+
+	if statusCode >= 400 {
+		return "", "", fmt.Errorf("finalize failed with status %d: %s", statusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return "", "", err
+	}
+
+	characterID, _ := result["character_id"].(string)
+	if characterID == "" {
+		characterID, _ = result["id"].(string)
+	}
+	profileURL, _ := result["profile_url"].(string)
+
+	return characterID, profileURL, nil
+}
+
+// SearchCharacter searches for public characters by username
+func (c *SoraClient) SearchCharacter(username, token string, proxyURL string) ([]map[string]interface{}, error) {
+	endpoint := fmt.Sprintf("/cameo/search?q=%s&intent=use", url.QueryEscape(username))
+
+	respBody, statusCode, err := c.makeRequest("GET", endpoint, token, nil, "", proxyURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode >= 400 {
+		return nil, fmt.Errorf("search failed with status %d: %s", statusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, err
+	}
+
+	charactersRaw, ok := result["characters"].([]interface{})
+	if !ok {
+		charactersRaw, _ = result["results"].([]interface{})
+	}
+
+	var characters []map[string]interface{}
+	for _, c := range charactersRaw {
+		if char, ok := c.(map[string]interface{}); ok {
+			characters = append(characters, char)
+		}
+	}
+
+	return characters, nil
+}
+
+// DeleteCharacter deletes a character by ID
+func (c *SoraClient) DeleteCharacter(characterID, token string, proxyURL string) error {
+	endpoint := fmt.Sprintf("/cameo/%s", characterID)
+
+	_, statusCode, err := c.makeRequest("DELETE", endpoint, token, nil, "", proxyURL)
+	if err != nil {
+		return err
+	}
+
+	if statusCode >= 400 {
+		return fmt.Errorf("delete character failed with status %d", statusCode)
+	}
+
+	return nil
+}
+
+// GetMyCharacters gets all characters owned by the current user
+func (c *SoraClient) GetMyCharacters(token string, proxyURL string) ([]map[string]interface{}, error) {
+	respBody, statusCode, err := c.makeRequest("GET", "/cameo/mine", token, nil, "", proxyURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode >= 400 {
+		return nil, fmt.Errorf("get my characters failed with status %d: %s", statusCode, string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, err
+	}
+
+	charactersRaw, ok := result["characters"].([]interface{})
+	if !ok {
+		charactersRaw, _ = result["cameos"].([]interface{})
+	}
+
+	var characters []map[string]interface{}
+	for _, c := range charactersRaw {
+		if char, ok := c.(map[string]interface{}); ok {
+			characters = append(characters, char)
+		}
+	}
+
+	return characters, nil
+}
+
+// BuildVideoPayloadWithCameo builds video payload with character references
+func (c *SoraClient) BuildVideoPayloadWithCameo(prompt, orientation, mediaID string, nFrames int, styleID, model, size string, cameoIDs []string) map[string]interface{} {
+	payload := c.BuildVideoPayload(prompt, orientation, mediaID, nFrames, styleID, model, size)
+
+	if len(cameoIDs) > 0 {
+		payload["cameo_ids"] = cameoIDs
+	}
+
+	return payload
+}
+
+// GenerateVideoWithCameo starts a video generation task with character references
+func (c *SoraClient) GenerateVideoWithCameo(prompt, token, orientation, mediaID string, nFrames int, styleID, model, size string, cameoIDs []string, proxyURL string) (string, error) {
+	// Generate sentinel token
+	sentinelToken, err := c.GenerateSentinelToken(token, proxyURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate sentinel token: %v", err)
+	}
+
+	payload := c.BuildVideoPayloadWithCameo(prompt, orientation, mediaID, nFrames, styleID, model, size, cameoIDs)
+
+	respBody, statusCode, err := c.makeRequest("POST", "/nf/create", token, payload, sentinelToken, proxyURL)
+	if err != nil {
+		return "", err
+	}
+
+	if statusCode >= 400 {
+		return "", fmt.Errorf("API error %d: %s", statusCode, string(respBody))
+	}
+
+	return ParseTaskResponse(respBody)
 }

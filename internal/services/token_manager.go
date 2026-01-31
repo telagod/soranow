@@ -35,11 +35,11 @@ type TokenManager struct {
 
 // NewTokenManager creates a new token manager
 func NewTokenManager(db *database.DB, lb *LoadBalancer, cm *ConcurrencyManager) *TokenManager {
-	// Create TLS client with Chrome profile
+	// Create TLS client with Firefox profile (bypasses Cloudflare better)
 	jar := tls_client.NewCookieJar()
 	options := []tls_client.HttpClientOption{
 		tls_client.WithTimeoutSeconds(30),
-		tls_client.WithClientProfile(profiles.Chrome_131),
+		tls_client.WithClientProfile(profiles.Firefox_132),
 		tls_client.WithNotFollowRedirects(),
 		tls_client.WithCookieJar(jar),
 	}
@@ -76,6 +76,30 @@ func (m *TokenManager) doTLSRequest(method, urlStr string, body string, headers 
 		return nil, 0, err
 	}
 
+	// Set default headers for Cloudflare bypass
+	req.Header = http2.Header{
+		"accept":          {"application/json, text/plain, */*"},
+		"accept-language": {"en-US,en;q=0.9"},
+		"origin":          {"https://sora.chatgpt.com"},
+		"referer":         {"https://sora.chatgpt.com/"},
+		"sec-fetch-dest":  {"empty"},
+		"sec-fetch-mode":  {"cors"},
+		"sec-fetch-site":  {"same-origin"},
+		http2.HeaderOrderKey: {
+			"accept",
+			"accept-language",
+			"authorization",
+			"content-type",
+			"origin",
+			"referer",
+			"sec-fetch-dest",
+			"sec-fetch-mode",
+			"sec-fetch-site",
+			"user-agent",
+		},
+	}
+
+	// Override with provided headers
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
@@ -129,45 +153,21 @@ type TokenTestResult struct {
 
 // ConvertSTToAT converts Session Token to Access Token
 func (m *TokenManager) ConvertSTToAT(sessionToken string, proxyURL string) (*STToATResult, error) {
-	req, err := http.NewRequest("GET", SoraSessionURL, nil)
-	if err != nil {
-		return &STToATResult{Success: false, Message: err.Error()}, err
+	headers := map[string]string{
+		"Cookie":     fmt.Sprintf("__Secure-next-auth.session-token=%s", sessionToken),
+		"Accept":     "application/json",
+		"Origin":     "https://sora.chatgpt.com",
+		"Referer":    "https://sora.chatgpt.com/",
+		"User-Agent": MobileUserAgents[0],
 	}
 
-	// Set headers
-	req.Header.Set("Cookie", fmt.Sprintf("__Secure-next-auth.session-token=%s", sessionToken))
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Origin", "https://sora.chatgpt.com")
-	req.Header.Set("Referer", "https://sora.chatgpt.com/")
-	req.Header.Set("User-Agent", MobileUserAgents[0])
-
-	// Create client with optional proxy
-	client := m.httpClient
-	if proxyURL != "" {
-		proxyURLParsed, err := url.Parse(proxyURL)
-		if err == nil {
-			client = &http.Client{
-				Timeout: 30 * time.Second,
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(proxyURLParsed),
-				},
-			}
-		}
-	}
-
-	resp, err := client.Do(req)
+	body, statusCode, err := m.doTLSRequest("GET", SoraSessionURL, "", headers, proxyURL)
 	if err != nil {
 		return &STToATResult{Success: false, Message: fmt.Sprintf("请求失败: %v", err)}, err
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &STToATResult{Success: false, Message: fmt.Sprintf("读取响应失败: %v", err)}, err
-	}
-
-	if resp.StatusCode != 200 {
-		return &STToATResult{Success: false, Message: fmt.Sprintf("API 返回错误: %d - %s", resp.StatusCode, string(body))}, nil
+	if statusCode != 200 {
+		return &STToATResult{Success: false, Message: fmt.Sprintf("API 返回错误: %d - %s", statusCode, string(body))}, nil
 	}
 
 	var result map[string]interface{}
@@ -257,60 +257,37 @@ func (m *TokenManager) TestToken(tokenID int64, proxyURL string) (*TokenTestResu
 		return &TokenTestResult{Success: false, Status: "error", Message: "Token 不存在"}, err
 	}
 
-	// Create client with optional proxy
-	client := m.httpClient
-	if proxyURL != "" {
-		proxyURLParsed, err := url.Parse(proxyURL)
-		if err == nil {
-			client = &http.Client{
-				Timeout: 30 * time.Second,
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(proxyURLParsed),
-				},
-			}
-		}
-	} else if token.ProxyURL != "" {
-		proxyURLParsed, err := url.Parse(token.ProxyURL)
-		if err == nil {
-			client = &http.Client{
-				Timeout: 30 * time.Second,
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(proxyURLParsed),
-				},
-			}
-		}
+	// Use token's proxy if no global proxy
+	effectiveProxy := proxyURL
+	if effectiveProxy == "" && token.ProxyURL != "" {
+		effectiveProxy = token.ProxyURL
+	}
+
+	headers := map[string]string{
+		"Authorization": "Bearer " + token.Token,
+		"User-Agent":    MobileUserAgents[0],
+		"Accept":        "application/json",
 	}
 
 	// Test by getting user info from /me endpoint
-	req, err := http.NewRequest("GET", SoraBackendURL+"/me", nil)
-	if err != nil {
-		return &TokenTestResult{Success: false, Status: "error", Message: err.Error()}, err
-	}
-
-	req.Header.Set("Authorization", "Bearer "+token.Token)
-	req.Header.Set("User-Agent", MobileUserAgents[0])
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := client.Do(req)
+	body, statusCode, err := m.doTLSRequest("GET", SoraBackendURL+"/me", "", headers, effectiveProxy)
 	if err != nil {
 		return &TokenTestResult{Success: false, Status: "error", Message: fmt.Sprintf("请求失败: %v", err)}, err
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &TokenTestResult{Success: false, Status: "error", Message: fmt.Sprintf("读取响应失败: %v", err)}, err
-	}
-
-	if resp.StatusCode == 401 {
+	if statusCode == 401 {
 		// Token is invalid/expired
 		token.IsExpired = true
 		m.db.UpdateToken(token)
 		return &TokenTestResult{Success: false, Status: "expired", Message: "Token 已过期或无效"}, nil
 	}
 
-	if resp.StatusCode != 200 {
-		return &TokenTestResult{Success: false, Status: "error", Message: fmt.Sprintf("API 返回错误: %d", resp.StatusCode)}, nil
+	if statusCode == 403 {
+		return &TokenTestResult{Success: false, Status: "error", Message: "请求被拒绝 (403)，可能需要代理"}, nil
+	}
+
+	if statusCode != 200 {
+		return &TokenTestResult{Success: false, Status: "error", Message: fmt.Sprintf("API 返回错误: %d - %s", statusCode, string(body))}, nil
 	}
 
 	var userInfo map[string]interface{}
@@ -321,18 +298,12 @@ func (m *TokenManager) TestToken(tokenID int64, proxyURL string) (*TokenTestResu
 	email, _ := userInfo["email"].(string)
 
 	// Get subscription info
-	subReq, _ := http.NewRequest("GET", SoraBackendURL+"/billing/subscriptions", nil)
-	subReq.Header.Set("Authorization", "Bearer "+token.Token)
-	subReq.Header.Set("User-Agent", MobileUserAgents[0])
-
 	planType := ""
 	planTitle := ""
 	subscriptionEnd := ""
 
-	subResp, err := client.Do(subReq)
-	if err == nil {
-		defer subResp.Body.Close()
-		subBody, _ := io.ReadAll(subResp.Body)
+	subBody, subStatus, err := m.doTLSRequest("GET", SoraBackendURL+"/billing/subscriptions", "", headers, effectiveProxy)
+	if err == nil && subStatus == 200 {
 		var subInfo map[string]interface{}
 		if json.Unmarshal(subBody, &subInfo) == nil {
 			if subs, ok := subInfo["subscriptions"].([]interface{}); ok && len(subs) > 0 {
@@ -353,14 +324,8 @@ func (m *TokenManager) TestToken(tokenID int64, proxyURL string) (*TokenTestResu
 	sora2Used := 0
 	sora2Remaining := 0
 
-	sora2Req, _ := http.NewRequest("GET", SoraBackendURL+"/project_y/invite/mine", nil)
-	sora2Req.Header.Set("Authorization", "Bearer "+token.Token)
-	sora2Req.Header.Set("User-Agent", MobileUserAgents[0])
-
-	sora2Resp, err := client.Do(sora2Req)
-	if err == nil {
-		defer sora2Resp.Body.Close()
-		sora2Body, _ := io.ReadAll(sora2Resp.Body)
+	sora2Body, sora2Status, err := m.doTLSRequest("GET", SoraBackendURL+"/project_y/invite/mine", "", headers, effectiveProxy)
+	if err == nil && sora2Status == 200 {
 		var sora2Info map[string]interface{}
 		if json.Unmarshal(sora2Body, &sora2Info) == nil {
 			if _, ok := sora2Info["invite_code"]; ok {
@@ -376,14 +341,8 @@ func (m *TokenManager) TestToken(tokenID int64, proxyURL string) (*TokenTestResu
 	}
 
 	// Get remaining count
-	checkReq, _ := http.NewRequest("GET", SoraBackendURL+"/nf/check", nil)
-	checkReq.Header.Set("Authorization", "Bearer "+token.Token)
-	checkReq.Header.Set("User-Agent", MobileUserAgents[0])
-
-	checkResp, err := client.Do(checkReq)
-	if err == nil {
-		defer checkResp.Body.Close()
-		checkBody, _ := io.ReadAll(checkResp.Body)
+	checkBody, checkStatus, err := m.doTLSRequest("GET", SoraBackendURL+"/nf/check", "", headers, effectiveProxy)
+	if err == nil && checkStatus == 200 {
 		var checkInfo map[string]interface{}
 		if json.Unmarshal(checkBody, &checkInfo) == nil {
 			if remaining, ok := checkInfo["remaining_count"].(float64); ok {

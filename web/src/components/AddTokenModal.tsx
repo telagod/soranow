@@ -81,8 +81,8 @@ export function AddTokenModal({ onClose, onSuccess }: Props) {
     try {
       await api.addToken({
         token: token.trim(),
-        st: st.trim() || undefined,
-        rt: rt.trim() || undefined,
+        session_token: st.trim() || undefined,
+        refresh_token: rt.trim() || undefined,
         client_id: clientId.trim() || undefined,
         proxy_url: proxyUrl.trim() || undefined,
         remark: remark.trim() || undefined,

@@ -12,8 +12,8 @@ interface Props {
 
 export function EditTokenModal({ token, onClose, onSuccess }: Props) {
   const [at, setAt] = useState(token.token || '')
-  const [st, setSt] = useState(token.st || '')
-  const [rt, setRt] = useState(token.rt || '')
+  const [st, setSt] = useState(token.session_token || '')
+  const [rt, setRt] = useState(token.refresh_token || '')
   const [clientId, setClientId] = useState(token.client_id || '')
   const [proxyUrl, setProxyUrl] = useState(token.proxy_url || '')
   const [remark, setRemark] = useState(token.remark || '')
@@ -84,8 +84,8 @@ export function EditTokenModal({ token, onClose, onSuccess }: Props) {
     try {
       await api.updateToken(token.id, {
         token: at.trim(),
-        st: st.trim() || undefined,
-        rt: rt.trim() || undefined,
+        session_token: st.trim() || undefined,
+        refresh_token: rt.trim() || undefined,
         client_id: clientId.trim() || undefined,
         proxy_url: proxyUrl.trim(),
         remark: remark.trim() || undefined,

@@ -47,8 +47,8 @@ export function TokenPanel({ onRefresh }: Props) {
     const exportData = tokens.map((t) => ({
       email: t.email,
       access_token: t.token,
-      session_token: t.st || null,
-      refresh_token: t.rt || null,
+      session_token: t.session_token || null,
+      refresh_token: t.refresh_token || null,
       client_id: t.client_id || null,
       proxy_url: t.proxy_url || null,
       remark: t.remark || null,

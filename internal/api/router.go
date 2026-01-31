@@ -19,6 +19,10 @@ func SetupRouter(db *database.DB, lb *services.LoadBalancer, cm *services.Concur
 	handler := NewHandler(db, lb, cm)
 	adminHandler := NewAdminHandler(db, lb, cm)
 
+	// Create SoraClient for character operations
+	soraClient := services.NewSoraClient("", 120, nil)
+	characterHandler := NewCharacterHandler(db, soraClient)
+
 	// Health check (no auth required)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -104,6 +108,17 @@ func SetupRouter(db *database.DB, lb *services.LoadBalancer, cm *services.Concur
 
 			// Proxy test
 			protected.POST("/proxy/test", adminHandler.HandleTestProxy)
+
+			// Character management
+			protected.GET("/characters", characterHandler.HandleGetCharacters)
+			protected.GET("/characters/:id", characterHandler.HandleGetCharacter)
+			protected.POST("/characters/upload", characterHandler.HandleUploadCharacterVideo)
+			protected.GET("/characters/:id/status", characterHandler.HandleGetCameoStatus)
+			protected.GET("/characters/username/check", characterHandler.HandleCheckUsername)
+			protected.POST("/characters/finalize", characterHandler.HandleFinalizeCharacter)
+			protected.DELETE("/characters/:id", characterHandler.HandleDeleteCharacter)
+			protected.GET("/characters/search", characterHandler.HandleSearchCharacters)
+			protected.POST("/characters/sync", characterHandler.HandleSyncCharacters)
 		}
 	}
 
