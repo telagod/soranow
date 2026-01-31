@@ -1,96 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#d946ef;stop-opacity:1" />
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
     </linearGradient>
-    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:1" />
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
-
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="240" fill="#0f0f23" stroke="url(#grad1)" stroke-width="4"/>
-
-  <!-- Inner glow ring -->
-  <circle cx="256" cy="256" r="200" fill="none" stroke="url(#grad1)" stroke-width="2" opacity="0.3"/>
-
-  <!-- Film strip left -->
-  <g fill="#1e1e3f" stroke="url(#grad2)" stroke-width="2">
-    <rect x="80" y="140" width="60" height="232" rx="8"/>
-    <!-- Film holes -->
-    <rect x="88" y="156" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="88" y="196" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="88" y="236" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="88" y="276" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="88" y="316" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="116" y="156" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="116" y="196" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="116" y="236" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="116" y="276" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="116" y="316" width="16" height="20" rx="3" fill="#0f0f23"/>
-  </g>
-
-  <!-- Film strip right -->
-  <g fill="#1e1e3f" stroke="url(#grad2)" stroke-width="2">
-    <rect x="372" y="140" width="60" height="232" rx="8"/>
-    <!-- Film holes -->
-    <rect x="380" y="156" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="380" y="196" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="380" y="236" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="380" y="276" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="380" y="316" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="408" y="156" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="408" y="196" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="408" y="236" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="408" y="276" width="16" height="20" rx="3" fill="#0f0f23"/>
-    <rect x="408" y="316" width="16" height="20" rx="3" fill="#0f0f23"/>
-  </g>
-
-  <!-- Central play button / AI spark -->
-  <g filter="url(#glow)">
-    <!-- Hexagon background -->
-    <polygon points="256,120 336,166 336,258 256,304 176,258 176,166" fill="url(#grad1)" opacity="0.2"/>
-    <polygon points="256,140 316,176 316,248 256,284 196,248 196,176" fill="url(#grad1)" opacity="0.4"/>
-
-    <!-- Play triangle -->
-    <path d="M230 180 L230 280 L310 230 Z" fill="url(#grad1)"/>
-
-    <!-- AI sparkles -->
-    <g fill="#fff" opacity="0.9">
-      <circle cx="200" cy="150" r="4"/>
-      <circle cx="312" cy="150" r="3"/>
-      <circle cx="340" cy="200" r="2"/>
-      <circle cx="172" cy="200" r="2"/>
-      <circle cx="200" cy="300" r="3"/>
-      <circle cx="312" cy="300" r="4"/>
-    </g>
-
-    <!-- Spark lines -->
-    <g stroke="#fff" stroke-width="2" opacity="0.6">
-      <line x1="200" y1="150" x2="215" y2="165"/>
-      <line x1="312" y1="150" x2="297" y2="165"/>
-      <line x1="200" y1="300" x2="215" y2="285"/>
-      <line x1="312" y1="300" x2="297" y2="285"/>
-    </g>
-  </g>
-
-  <!-- "S" letter stylized -->
-  <g filter="url(#glow)">
-    <path d="M220 340 Q180 340 180 370 Q180 400 220 400 L290 400 Q330 400 330 430 Q330 460 290 460 L220 460"
-          fill="none" stroke="url(#grad1)" stroke-width="12" stroke-linecap="round"/>
-  </g>
-
-  <!-- Orbital rings -->
-  <ellipse cx="256" cy="256" rx="180" ry="40" fill="none" stroke="url(#grad2)" stroke-width="1.5" opacity="0.4" transform="rotate(-20 256 256)"/>
-  <ellipse cx="256" cy="256" rx="160" ry="35" fill="none" stroke="url(#grad1)" stroke-width="1" opacity="0.3" transform="rotate(25 256 256)"/>
+  <!-- Play button -->
+  <circle cx="32" cy="32" r="28" fill="url(#g)"/>
+  <polygon points="26,20 26,44 46,32" fill="#fff"/>
 </svg>
