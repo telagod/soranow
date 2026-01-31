@@ -1,11 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#818cf8"/>
-      <stop offset="100%" stop-color="#c084fc"/>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a855f7"/>
     </linearGradient>
   </defs>
-  <!-- Play button -->
-  <circle cx="32" cy="32" r="28" fill="url(#g)"/>
-  <polygon points="26,20 26,44 46,32" fill="#fff"/>
+
+  <!-- Hexagon -->
+  <polygon
+    points="256,48 424,145 424,339 256,436 88,339 88,145"
+    fill="url(#g1)"
+  />
+
+  <!-- Infinity symbol (∞) - self-reference -->
+  <path
+    d="M176 242
+       C176 202, 216 202, 256 242
+       C296 282, 336 282, 336 242
+       C336 202, 296 202, 256 242
+       C216 282, 176 282, 176 242"
+    fill="none"
+    stroke="#fff"
+    stroke-width="28"
+    stroke-linecap="round"
+  />
+
+  <!-- Center dot - origin point -->
+  <circle cx="256" cy="242" r="14" fill="#fff"/>
 </svg>
