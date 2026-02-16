@@ -81,8 +81,6 @@ func (h *GenerateHandler) getTokenAndProxy(tokenID int) (string, string, error) 
 
 func (h *GenerateHandler) durationToFrames(duration int) int {
 	switch {
-	case duration <= 5:
-		return 150
 	case duration <= 10:
 		return 300
 	case duration <= 15:
