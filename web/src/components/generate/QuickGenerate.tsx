@@ -208,10 +208,10 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
       <div className="flex gap-2">
         <button
           onClick={() => setType('video')}
-          className={`flex-1 h-12 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 h-12 rounded-[12px] border-2 transition-all flex items-center justify-center gap-2 ${
             type === 'video'
               ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-              : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-muted)]'
+              : 'border-white/30 text-[var(--text-secondary)] hover:border-[var(--text-muted)]'
           }`}
         >
           <Video className="w-5 h-5" />
@@ -219,10 +219,10 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
         </button>
         <button
           onClick={() => setType('image')}
-          className={`flex-1 h-12 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 h-12 rounded-[12px] border-2 transition-all flex items-center justify-center gap-2 ${
             type === 'image'
               ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-              : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-muted)]'
+              : 'border-white/30 text-[var(--text-secondary)] hover:border-[var(--text-muted)]'
           }`}
         >
           <Image className="w-5 h-5" />
@@ -238,7 +238,7 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
         <select
           value={selectedTokenId || ''}
           onChange={(e) => setSelectedTokenId(Number(e.target.value))}
-          className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+          className="glass-input w-full h-9 px-3 rounded-[12px] text-sm text-[var(--text-primary)]"
         >
           {activeTokens.length === 0 && (
             <option value="">无可用 Token</option>
@@ -265,7 +265,7 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
           }
           rows={4}
           disabled={isGenerating}
-          className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] resize-none disabled:opacity-50"
+          className="glass-input w-full px-3 py-2 rounded-[12px] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none disabled:opacity-50"
         />
       </div>
 
@@ -286,10 +286,10 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
                   key={o.id}
                   onClick={() => setOrientation(o.id as 'landscape' | 'portrait')}
                   disabled={isGenerating}
-                  className={`flex-1 h-9 text-xs rounded-md transition-colors disabled:opacity-50 ${
+                  className={`flex-1 h-9 text-xs rounded-[12px] transition-colors disabled:opacity-50 ${
                     orientation === o.id
                       ? 'bg-[var(--accent)] text-white'
-                      : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      : 'glass-btn text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {o.name}
@@ -301,7 +301,7 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
               value={imageSize}
               onChange={(e) => setImageSize(e.target.value)}
               disabled={isGenerating}
-              className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] disabled:opacity-50"
+              className="glass-input w-full h-9 px-3 rounded-[12px] text-sm text-[var(--text-primary)] disabled:opacity-50"
             >
               {SIZE_OPTIONS.map((size) => (
                 <option key={size.id} value={size.id}>
@@ -324,10 +324,10 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
                   key={d.value}
                   onClick={() => setDuration(d.value)}
                   disabled={isGenerating}
-                  className={`flex-1 h-9 text-xs rounded-md transition-colors disabled:opacity-50 ${
+                  className={`flex-1 h-9 text-xs rounded-[12px] transition-colors disabled:opacity-50 ${
                     duration === d.value
                       ? 'bg-[var(--accent)] text-white'
-                      : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      : 'glass-btn text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {d.label}
@@ -354,7 +354,7 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
 
       {/* Advanced Options */}
       {showAdvanced && (
-        <div className="space-y-4 p-4 bg-[var(--bg-tertiary)] rounded-lg">
+        <div className="space-y-4 p-4 glass-card rounded-[16px]">
           {/* Character Picker (video only) */}
           {type === 'video' && (
             <CharacterPicker
@@ -376,7 +376,7 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
                   <img
                     src={referenceImage}
                     alt="Reference"
-                    className="w-full h-full object-cover rounded-lg border border-[var(--border)]"
+                    className="w-full h-full object-cover rounded-[12px] border border-white/30"
                   />
                   <button
                     onClick={() => setReferenceImage(null)}
@@ -389,7 +389,7 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isGenerating}
-                  className="w-32 h-32 border-2 border-dashed border-[var(--border)] hover:border-[var(--accent)] rounded-lg flex flex-col items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors disabled:opacity-50"
+                  className="w-32 h-32 border-2 border-dashed border-white/30 hover:border-[var(--accent)] rounded-[12px] flex flex-col items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors disabled:opacity-50"
                 >
                   <Upload className="w-6 h-6 mb-1" />
                   <span className="text-xs">上传图片</span>
@@ -411,7 +411,7 @@ export function QuickGenerate({ tokens, onResult }: QuickGenerateProps) {
       <button
         onClick={handleGenerate}
         disabled={isGenerating || !prompt.trim() || !selectedTokenId}
-        className="w-full h-12 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        className="glass-btn-primary w-full h-12 font-medium disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {isGenerating ? (
           <>

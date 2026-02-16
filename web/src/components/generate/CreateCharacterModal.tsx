@@ -221,10 +221,10 @@ export function CreateCharacterModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] w-full max-w-lg max-h-[90vh] overflow-hidden">
+    <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="glass-modal glass-animate-in w-full max-w-lg max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <div className="glass-header flex items-center justify-between p-4">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">
             创建角色
           </h2>
@@ -237,7 +237,7 @@ export function CreateCharacterModal({
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-2 p-4 border-b border-[var(--border)]">
+        <div className="flex items-center justify-center gap-2 p-4 border-b border-white/30">
           {(['upload', 'processing', 'finalize'] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center">
               <div className={`
@@ -246,7 +246,7 @@ export function CreateCharacterModal({
                   ? 'bg-[var(--accent)] text-white'
                   : i < ['upload', 'processing', 'finalize'].indexOf(step)
                     ? 'bg-green-500 text-white'
-                    : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)]'
+                    : 'bg-white/30 backdrop-blur-sm text-[var(--text-muted)]'
                 }
               `}>
                 {i < ['upload', 'processing', 'finalize'].indexOf(step) ? (
@@ -259,7 +259,7 @@ export function CreateCharacterModal({
                 <div className={`w-12 h-0.5 mx-1 ${
                   i < ['upload', 'processing', 'finalize'].indexOf(step)
                     ? 'bg-green-500'
-                    : 'bg-[var(--border)]'
+                    : 'bg-white/30'
                 }`} />
               )}
             </div>
@@ -278,7 +278,7 @@ export function CreateCharacterModal({
                 <select
                   value={selectedTokenId || ''}
                   onChange={(e) => setSelectedTokenId(Number(e.target.value))}
-                  className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                  className="glass-input w-full h-9 px-3 rounded-[12px] text-sm text-[var(--text-primary)]"
                 >
                   {activeTokens.map((token) => (
                     <option key={token.id} value={token.id}>
@@ -296,10 +296,10 @@ export function CreateCharacterModal({
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   className={`
-                    border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                    border-2 border-dashed rounded-[16px] p-6 text-center cursor-pointer transition-colors
                     ${videoPreview
                       ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-                      : 'border-[var(--border)] hover:border-[var(--text-muted)]'
+                      : 'border-white/30 hover:border-[var(--text-muted)]'
                     }
                   `}
                 >
@@ -340,7 +340,7 @@ export function CreateCharacterModal({
                   value={timestamps}
                   onChange={(e) => setTimestamps(e.target.value)}
                   placeholder="0-5"
-                  className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                  className="glass-input w-full h-9 px-3 text-sm text-[var(--text-primary)]"
                 />
                 <p className="text-xs text-[var(--text-muted)] mt-1">
                   指定视频中角色出现的时间段，如 "0-5" 表示 0 到 5 秒
@@ -359,7 +359,7 @@ export function CreateCharacterModal({
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                     placeholder="my_character"
-                    className="w-full h-9 pl-7 pr-9 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                    className="glass-input w-full h-9 pl-7 pr-9 rounded-[12px] text-sm text-[var(--text-primary)]"
                   />
                   {username && (
                     <span className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -395,8 +395,8 @@ export function CreateCharacterModal({
           {step === 'finalize' && (
             <div className="space-y-4">
               {/* Profile Preview */}
-              <div className="flex items-center gap-4 p-4 bg-[var(--bg-tertiary)] rounded-lg">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-[var(--bg-secondary)]">
+              <div className="flex items-center gap-4 p-4 bg-white/20 rounded-[16px]">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-white/20">
                   {profileUrl ? (
                     <img
                       src={profileUrl}
@@ -429,7 +429,7 @@ export function CreateCharacterModal({
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="我的角色"
-                  className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                  className="glass-input w-full h-9 px-3 text-sm text-[var(--text-primary)]"
                 />
               </div>
 
@@ -443,7 +443,7 @@ export function CreateCharacterModal({
                   onChange={(e) => setInstructionSet(e.target.value)}
                   placeholder="描述角色的特征、性格、穿着等..."
                   rows={3}
-                  className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] resize-none"
+                  className="glass-input w-full px-3 py-2 rounded-[12px] text-sm text-[var(--text-primary)] resize-none"
                 />
               </div>
 
@@ -455,20 +455,20 @@ export function CreateCharacterModal({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setVisibility('private')}
-                    className={`flex-1 h-9 rounded-md text-sm font-medium transition-colors ${
+                    className={`glass-btn flex-1 h-9 rounded-[12px] text-sm font-medium transition-colors ${
                       visibility === 'private'
                         ? 'bg-[var(--accent)] text-white'
-                        : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     私有
                   </button>
                   <button
                     onClick={() => setVisibility('public')}
-                    className={`flex-1 h-9 rounded-md text-sm font-medium transition-colors ${
+                    className={`glass-btn flex-1 h-9 rounded-[12px] text-sm font-medium transition-colors ${
                       visibility === 'public'
                         ? 'bg-[var(--accent)] text-white'
-                        : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     公开
@@ -480,7 +480,7 @@ export function CreateCharacterModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--border)]">
+        <div className="glass-footer flex items-center justify-end gap-2 p-4">
           <button
             onClick={onClose}
             className="px-4 h-9 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
@@ -491,7 +491,7 @@ export function CreateCharacterModal({
             <button
               onClick={handleUpload}
               disabled={!videoFile || !username || !selectedTokenId || isLoading || usernameAvailable === false}
-              className="px-4 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="glass-btn-primary px-4 h-9 text-sm font-medium disabled:opacity-50 flex items-center gap-2"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               上传并处理
@@ -501,7 +501,7 @@ export function CreateCharacterModal({
             <button
               onClick={handleFinalize}
               disabled={!displayName || isLoading}
-              className="px-4 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="glass-btn-primary px-4 h-9 text-sm font-medium disabled:opacity-50 flex items-center gap-2"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               完成创建

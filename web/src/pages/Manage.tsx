@@ -94,23 +94,23 @@ export function ManagePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
+    <div className="min-h-screen bg-transparent">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <header className="glass-toolbar sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between">
           <h1 className="text-base font-semibold text-[var(--text-primary)]">SoraNow</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="h-7 px-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded transition-colors flex items-center gap-1"
+              className="glass-btn h-7 px-2 text-xs flex items-center gap-1"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               刷新
             </button>
             <button
               onClick={handleLogout}
-              className="h-7 px-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded transition-colors flex items-center gap-1"
+              className="glass-btn h-7 px-2 text-xs flex items-center gap-1"
             >
               <LogOut className="w-3.5 h-3.5" />
               退出
@@ -120,7 +120,7 @@ export function ManagePage() {
       </header>
 
       {/* Tabs */}
-      <div className="bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="glass-toolbar border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4">
           <nav className="flex gap-1">
             {tabs.map((t) => (
@@ -129,8 +129,8 @@ export function ManagePage() {
                 onClick={() => handleTabChange(t.id)}
                 className={`h-10 px-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
                   tab === t.id
-                    ? 'border-[var(--accent)] text-[var(--text-primary)]'
-                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                    ? 'glass-highlight border-[var(--accent)] text-[var(--text-primary)]'
+                    : 'border-transparent text-[var(--text-muted)] hover:bg-white/20'
                 }`}
               >
                 <t.icon className="w-4 h-4" />

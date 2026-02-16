@@ -95,9 +95,9 @@ export function GeneratePanel() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col glass-card">
       {/* Tab Navigation */}
-      <div className="flex items-center gap-1 p-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="glass-toolbar flex items-center gap-1 p-2">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
@@ -105,12 +105,16 @@ export function GeneratePanel() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                flex items-center gap-2 px-4 py-2 rounded-[12px] text-sm font-medium transition-all
                 ${activeTab === tab.id
-                  ? 'bg-[var(--accent)] text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                  ? 'glass-highlight'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/20'
                 }
               `}
+              style={{
+                transitionDuration: '300ms',
+                transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)'
+              }}
             >
               <Icon className="w-4 h-4" />
               {tab.label}
@@ -124,12 +128,12 @@ export function GeneratePanel() {
         {activeTab === 'quick' && (
           <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-0">
             {/* Left Panel - Quick Generate */}
-            <div className="lg:col-span-1 p-4 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg-secondary)]">
+            <div className="lg:col-span-1 p-4 overflow-y-auto border-r border-white/20 bg-transparent">
               <QuickGenerate tokens={tokens} onResult={handleResult} />
             </div>
 
             {/* Right Panel - Results */}
-            <div className="lg:col-span-2 p-4 overflow-y-auto">
+            <div className="lg:col-span-2 p-4 overflow-y-auto bg-transparent">
               <ResultGallery
                 results={results}
                 onDelete={handleDeleteResult}
@@ -140,7 +144,7 @@ export function GeneratePanel() {
         )}
 
         {activeTab === 'story' && (
-          <div className="h-full bg-[var(--bg-secondary)]">
+          <div className="h-full bg-transparent">
             <StoryEditor
               tokens={tokens}
               onGenerationComplete={handleStoryComplete}
@@ -149,7 +153,7 @@ export function GeneratePanel() {
         )}
 
         {activeTab === 'characters' && (
-          <div className="h-full p-4 overflow-y-auto bg-[var(--bg-secondary)]">
+          <div className="h-full p-4 overflow-y-auto bg-transparent">
             <CharacterManager tokens={tokens} />
           </div>
         )}

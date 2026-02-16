@@ -271,7 +271,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+      <div className="flex items-center justify-between p-4 border-b border-white/30">
         <div className="flex items-center gap-4">
           <div>
             <input
@@ -304,7 +304,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
           <select
             value={selectedTokenId || ''}
             onChange={(e) => setSelectedTokenId(Number(e.target.value))}
-            className="h-8 px-2 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+            className="glass-btn h-8 px-2 text-xs text-[var(--text-primary)]"
           >
             {activeTokens.map((token) => (
               <option key={token.id} value={token.id}>
@@ -316,7 +316,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
           {/* Template Button */}
           <button
             onClick={() => setShowTemplates(!showTemplates)}
-            className="h-8 px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md transition-colors"
+            className="glass-btn h-8 px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             模板库
           </button>
@@ -325,7 +325,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
           <button
             onClick={generateAll}
             disabled={isGenerating || story.shots.length === 0}
-            className="h-8 px-4 text-xs text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="glass-btn-primary h-8 px-4 text-xs disabled:opacity-50 flex items-center gap-2"
           >
             {isGenerating ? (
               <>
@@ -345,7 +345,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Settings */}
-        <div className="w-64 border-r border-[var(--border)] p-4 overflow-y-auto space-y-4">
+        <div className="w-64 border-r border-white/30 p-4 overflow-y-auto space-y-4 bg-[var(--glass-bg)] backdrop-blur-[16px]">
           {/* Orientation */}
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
@@ -356,10 +356,10 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
                 <button
                   key={o.id}
                   onClick={() => setStory(prev => ({ ...prev, orientation: o.id as 'landscape' | 'portrait' }))}
-                  className={`flex-1 h-8 text-xs rounded-md transition-colors ${
+                  className={`flex-1 h-8 text-xs rounded-[12px] transition-colors ${
                     story.orientation === o.id
                       ? 'bg-[var(--accent)] text-white'
-                      : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      : 'glass-btn text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {o.name}
@@ -392,7 +392,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Template Library (Overlay) */}
           {showTemplates && (
-            <div className="absolute inset-0 z-20 bg-[var(--bg-primary)]/95 p-6 overflow-y-auto">
+            <div className="absolute inset-0 z-20 glass-overlay p-6 overflow-y-auto">
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-[var(--text-primary)]">
@@ -420,14 +420,14 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={addShot}
-                    className="h-9 px-4 text-sm text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-md transition-colors flex items-center gap-2"
+                    className="glass-btn-primary h-9 px-4 text-sm flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
                     添加镜头
                   </button>
                   <button
                     onClick={() => setShowTemplates(true)}
-                    className="h-9 px-4 text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md transition-colors"
+                    className="glass-btn h-9 px-4 text-sm text-[var(--text-secondary)] transition-colors"
                   >
                     选择模板
                   </button>
@@ -451,7 +451,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
                 <button
                   onClick={addShot}
                   disabled={isGenerating}
-                  className="w-full h-12 border-2 border-dashed border-[var(--border)] hover:border-[var(--accent)] rounded-lg text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full h-12 border-2 border-dashed border-white/30 hover:border-[var(--accent)] rounded-[12px] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
                   添加镜头
@@ -462,7 +462,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
 
           {/* Timeline */}
           {story.shots.length > 0 && (
-            <div className="border-t border-[var(--border)] p-3">
+            <div className="border-t border-white/30 p-3">
               <div className="flex items-center gap-2">
                 {/* Navigation */}
                 <button

@@ -56,7 +56,7 @@ export function LogsPanel({ onRefresh }: Props) {
       const progress = log.progress || 0
       return (
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-white/30 backdrop-blur-sm rounded-full overflow-hidden">
             <div className="h-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
           </div>
           <span className="text-xs text-blue-400">{progress.toFixed(0)}%</span>
@@ -74,7 +74,7 @@ export function LogsPanel({ onRefresh }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-8 text-center text-[var(--text-muted)] text-sm">
+      <div className="bg-white/40 backdrop-blur-md rounded-[16px] border border-white/30 p-8 text-center text-[var(--text-muted)] text-sm">
         加载中...
       </div>
     )
@@ -82,12 +82,12 @@ export function LogsPanel({ onRefresh }: Props) {
 
   return (
     <>
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
-        <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+      <div className="glass-card">
+        <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
           <h2 className="text-sm font-medium text-[var(--text-primary)]">请求日志</h2>
           <button
             onClick={handleClearLogs}
-            className="h-7 px-2.5 text-xs text-red-500 hover:bg-red-500/10 rounded transition-colors flex items-center gap-1"
+            className="h-7 px-2.5 text-xs text-red-500 hover:bg-red-500/10 rounded-[12px] transition-colors flex items-center gap-1"
           >
             <Trash2 className="w-3.5 h-3.5" />
             清空日志
@@ -102,7 +102,7 @@ export function LogsPanel({ onRefresh }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+                <tr className="border-b border-white/20 text-[var(--text-muted)]">
                   <th className="h-9 px-3 text-left font-medium">操作</th>
                   <th className="h-9 px-3 text-left font-medium">Token</th>
                   <th className="h-9 px-3 text-left font-medium">状态码</th>
@@ -112,15 +112,15 @@ export function LogsPanel({ onRefresh }: Props) {
                   <th className="h-9 px-3 text-right font-medium">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border)]">
+              <tbody className="divide-y divide-white/20">
                 {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-[var(--bg-tertiary)] transition-colors">
+                  <tr key={log.id} className="hover:bg-white/20 transition-colors">
                     <td className="h-10 px-3 text-[var(--text-primary)]">{log.operation}</td>
                     <td className="h-10 px-3 text-xs text-[var(--text-secondary)]">
                       {log.token_email || '未知'}
                     </td>
                     <td className="h-10 px-3">
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getStatusClass(log)}`}>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-[12px] text-xs font-medium ${getStatusClass(log)}`}>
                         {getStatusText(log)}
                       </span>
                     </td>
@@ -135,7 +135,7 @@ export function LogsPanel({ onRefresh }: Props) {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setSelectedLog(log)}
-                          className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded transition-colors"
+                          className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-[12px] transition-colors"
                           title="查看详情"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -143,7 +143,7 @@ export function LogsPanel({ onRefresh }: Props) {
                         {log.status_code === -1 && log.task_id && (
                           <button
                             onClick={() => handleCancelTask(log.task_id!)}
-                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded transition-colors"
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-[12px] transition-colors"
                             title="终止任务"
                           >
                             <StopCircle className="w-3.5 h-3.5" />
@@ -161,11 +161,11 @@ export function LogsPanel({ onRefresh }: Props) {
 
       {/* Log Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] sticky top-0 bg-[var(--bg-secondary)]">
+        <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center">
+          <div className="glass-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 sticky top-0 bg-white/30">
               <h3 className="text-sm font-medium text-[var(--text-primary)]">日志详情</h3>
-              <button onClick={() => setSelectedLog(null)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded">
+              <button onClick={() => setSelectedLog(null)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-[12px]">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -179,7 +179,7 @@ export function LogsPanel({ onRefresh }: Props) {
                 </div>
                 <div>
                   <span className="text-[var(--text-muted)]">状态码:</span>{' '}
-                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getStatusClass(selectedLog)}`}>
+                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded-[12px] text-xs font-medium ${getStatusClass(selectedLog)}`}>
                     {getStatusText(selectedLog)}
                   </span>
                 </div>
@@ -199,7 +199,7 @@ export function LogsPanel({ onRefresh }: Props) {
               {selectedLog.response_body && (
                 <div>
                   <h4 className="text-xs font-medium text-[var(--text-secondary)] mb-2">响应内容</h4>
-                  <pre className="p-3 bg-[var(--bg-tertiary)] rounded-md text-xs text-[var(--text-primary)] overflow-x-auto whitespace-pre-wrap break-all">
+                  <pre className="p-3 bg-white/30 backdrop-blur-sm rounded-[12px] text-xs text-[var(--text-primary)] overflow-x-auto whitespace-pre-wrap break-all">
                     {(() => {
                       try {
                         return JSON.stringify(JSON.parse(selectedLog.response_body), null, 2)

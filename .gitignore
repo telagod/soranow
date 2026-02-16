@@ -34,3 +34,4 @@ Thumbs.db
 config/setting.toml
 !config/setting.toml.example
 soranow
+.ant-colony/

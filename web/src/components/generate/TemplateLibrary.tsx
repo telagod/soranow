@@ -33,7 +33,7 @@ export function TemplateLibrary({ onSelect, selectedId }: TemplateLibraryProps) 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="搜索模板..."
-          className="w-full h-9 pl-9 pr-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+          className="glass-input w-full h-9 pl-9 pr-3 text-sm text-[var(--text-primary)]"
         />
       </div>
 
@@ -44,7 +44,7 @@ export function TemplateLibrary({ onSelect, selectedId }: TemplateLibraryProps) 
           className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
             selectedCategory === 'all'
               ? 'bg-[var(--accent)] text-white'
-              : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              : 'glass-btn text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
           全部
@@ -56,7 +56,7 @@ export function TemplateLibrary({ onSelect, selectedId }: TemplateLibraryProps) 
             className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
               selectedCategory === key
                 ? 'bg-[var(--accent)] text-white'
-                : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                : 'glass-btn text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             {label}
@@ -98,10 +98,10 @@ function TemplateCard({ template, isSelected, onClick }: TemplateCardProps) {
     <button
       onClick={onClick}
       className={`
-        w-full text-left p-3 rounded-lg border transition-all
+        glass-card w-full text-left p-3 transition-all
         ${isSelected
           ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-          : 'border-[var(--border)] bg-[var(--bg-tertiary)] hover:border-[var(--text-muted)]'
+          : 'hover:border-[var(--text-muted)]'
         }
       `}
     >
@@ -129,7 +129,7 @@ function TemplateCard({ template, isSelected, onClick }: TemplateCardProps) {
           {totalDuration}s
         </span>
         {template.style && (
-          <span className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[10px]">
+          <span className="px-1.5 py-0.5 bg-white/40 backdrop-blur-md rounded text-[10px]">
             {template.style}
           </span>
         )}
@@ -159,7 +159,7 @@ export function TemplateQuickSelect({ onSelect, category }: TemplateQuickSelectP
           <button
             key={template.id}
             onClick={() => onSelect(template)}
-            className="px-2 py-1 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="px-2 py-1 text-xs bg-white/30 backdrop-blur-sm border border-white/30 rounded hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
             {template.name}
           </button>

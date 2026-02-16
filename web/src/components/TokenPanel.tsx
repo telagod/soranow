@@ -192,8 +192,8 @@ export function TokenPanel({ onRefresh }: Props) {
     <div className="space-y-4">
       <StatsCards />
 
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)]">
-        <div className="px-4 py-3 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
+      <div className="glass-card">
+        <div className="glass-toolbar px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <h2 className="text-sm font-medium text-[var(--text-primary)]">Token 列表</h2>
 
@@ -201,7 +201,7 @@ export function TokenPanel({ onRefresh }: Props) {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="h-7 px-2 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded text-[var(--text-secondary)]"
+              className="h-7 px-2 text-xs bg-white/30 backdrop-blur-sm border border-white/30 rounded text-[var(--text-secondary)]"
             >
               <option value="all">全部</option>
               <option value="active">活跃</option>
@@ -215,7 +215,7 @@ export function TokenPanel({ onRefresh }: Props) {
                 type="checkbox"
                 checked={atAutoRefresh}
                 onChange={handleAtAutoRefreshToggle}
-                className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                className="w-3.5 h-3.5 rounded border-white/30 bg-white/30 backdrop-blur-sm"
               />
               自动刷新 AT
             </label>
@@ -226,7 +226,8 @@ export function TokenPanel({ onRefresh }: Props) {
             <div className="relative">
               <button
                 onClick={() => setShowBatchMenu(!showBatchMenu)}
-                className="h-7 px-2.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors flex items-center gap-1"
+                className="glass-btn h-7 px-2.5 text-xs text-white rounded flex items-center gap-1"
+                style={{ background: 'var(--btn-primary)' }}
               >
                 <Check className="w-3.5 h-3.5" />
                 批量操作
@@ -235,23 +236,23 @@ export function TokenPanel({ onRefresh }: Props) {
               {showBatchMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowBatchMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-40 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg shadow-lg z-20 py-1">
-                    <button onClick={handleBatchTestUpdate} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] flex items-center gap-2">
+                  <div className="glass-card absolute right-0 top-full mt-1 w-40 z-20">
+                    <button onClick={handleBatchTestUpdate} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-white/30 backdrop-blur-sm flex items-center gap-2">
                       <RefreshCw className="w-3.5 h-3.5" /> 测试更新
                     </button>
-                    <button onClick={handleBatchEnable} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] flex items-center gap-2">
+                    <button onClick={handleBatchEnable} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-white/30 backdrop-blur-sm flex items-center gap-2">
                       <Power className="w-3.5 h-3.5 text-green-500" /> 批量启用
                     </button>
-                    <button onClick={handleBatchDisable} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] flex items-center gap-2">
+                    <button onClick={handleBatchDisable} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-white/30 backdrop-blur-sm flex items-center gap-2">
                       <Power className="w-3.5 h-3.5 text-yellow-500" /> 批量禁用
                     </button>
-                    <button onClick={handleBatchDeleteDisabled} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] flex items-center gap-2">
+                    <button onClick={handleBatchDeleteDisabled} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-white/30 backdrop-blur-sm flex items-center gap-2">
                       <Trash2 className="w-3.5 h-3.5 text-red-500" /> 清理禁用
                     </button>
-                    <button onClick={handleBatchDeleteSelected} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] flex items-center gap-2">
+                    <button onClick={handleBatchDeleteSelected} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-white/30 backdrop-blur-sm flex items-center gap-2">
                       <Trash2 className="w-3.5 h-3.5 text-red-500" /> 删除选中
                     </button>
-                    <button onClick={handleBatchProxy} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] flex items-center gap-2">
+                    <button onClick={handleBatchProxy} className="w-full px-3 py-1.5 text-xs text-left text-[var(--text-secondary)] hover:bg-white/30 backdrop-blur-sm flex items-center gap-2">
                       <Globe className="w-3.5 h-3.5 text-blue-500" /> 修改代理
                     </button>
                   </div>
@@ -261,21 +262,24 @@ export function TokenPanel({ onRefresh }: Props) {
 
             <button
               onClick={handleExport}
-              className="h-7 px-2.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center gap-1"
+              className="glass-btn h-7 px-2.5 text-xs text-white rounded flex items-center gap-1"
+              style={{ background: 'var(--btn-info)' }}
             >
               <Download className="w-3.5 h-3.5" />
               导出
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="h-7 px-2.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center gap-1"
+              className="glass-btn h-7 px-2.5 text-xs text-white rounded flex items-center gap-1"
+              style={{ background: 'var(--btn-success)' }}
             >
               <Upload className="w-3.5 h-3.5" />
               导入
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="h-7 px-2.5 text-xs bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded transition-colors flex items-center gap-1"
+              className="glass-btn h-7 px-2.5 text-xs text-white rounded flex items-center gap-1"
+              style={{ background: 'var(--btn-warning)' }}
             >
               <Plus className="w-3.5 h-3.5" />
               新增

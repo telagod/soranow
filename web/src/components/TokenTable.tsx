@@ -120,16 +120,16 @@ export function TokenTable({ onRefresh }: Props) {
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto glass-card !p-0 !rounded-xl">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--border)] text-[var(--text-muted)]">
+          <thead className="glass-toolbar">
+            <tr className="text-[var(--text-muted)]">
               <th className="h-9 px-3 text-left font-medium">
                 <input
                   type="checkbox"
                   checked={isAllSelected}
                   onChange={handleSelectAll}
-                  className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                  className="w-3.5 h-3.5 rounded border-white/30 bg-white/30"
                 />
               </th>
               <th className="h-9 px-3 text-left font-medium">邮箱</th>
@@ -145,15 +145,15 @@ export function TokenTable({ onRefresh }: Props) {
               <th className="h-9 px-3 text-right font-medium">操作</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--border)]">
+          <tbody className="divide-y divide-white/10">
             {paginatedTokens.map((token) => (
-              <tr key={token.id} className="hover:bg-[var(--bg-tertiary)] transition-colors">
+              <tr key={token.id} className="hover:bg-white/10 transition-colors">
                 <td className="h-10 px-3">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(token.id)}
                     onChange={() => toggleSelect(token.id)}
-                    className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                    className="w-3.5 h-3.5 rounded border-white/30 bg-white/30"
                   />
                 </td>
                 <td className="h-10 px-3 text-[var(--text-primary)]">
@@ -161,12 +161,12 @@ export function TokenTable({ onRefresh }: Props) {
                 </td>
                 <td className="h-10 px-3">
                   <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border border-white/20 backdrop-blur-sm ${
                       token.is_expired
-                        ? 'bg-gray-500/20 text-gray-400'
+                        ? 'bg-white/10 text-[var(--text-muted)]'
                         : token.is_active
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-red-500/20 text-red-400'
+                        ? 'bg-green-500/15 text-green-400'
+                        : 'bg-red-500/15 text-red-400'
                     }`}
                   >
                     {token.is_expired ? '已过期' : token.is_active ? '活跃' : '禁用'}
@@ -190,7 +190,7 @@ export function TokenTable({ onRefresh }: Props) {
                   {formatExpiry(token.expiry_time)}
                 </td>
                 <td className="h-10 px-3">
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400" title={token.plan_title || ''}>
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs text-blue-400 bg-blue-500/15 border border-white/20 backdrop-blur-sm" title={token.plan_title || ''}>
                     {formatPlanType(token.plan_type)}
                   </span>
                 </td>
@@ -220,7 +220,7 @@ export function TokenTable({ onRefresh }: Props) {
                     </button>
                     <button
                       onClick={() => setEditToken(token)}
-                      className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] rounded transition-colors"
+                      className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/20 rounded transition-colors"
                       title="编辑"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -256,7 +256,7 @@ export function TokenTable({ onRefresh }: Props) {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--border)]">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-white/20 glass-toolbar rounded-b-xl">
         <div className="flex items-center gap-2">
           <span className="text-xs text-[var(--text-muted)]">每页</span>
           <select
@@ -265,7 +265,7 @@ export function TokenTable({ onRefresh }: Props) {
               setPageSize(Number(e.target.value))
               setCurrentPage(1)
             }}
-            className="h-7 px-2 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded text-[var(--text-secondary)]"
+            className="glass-input h-7 px-2 text-xs text-[var(--text-secondary)] rounded-[12px]"
           >
             <option value={20}>20</option>
             <option value={50}>50</option>
@@ -279,14 +279,14 @@ export function TokenTable({ onRefresh }: Props) {
             <button
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="h-7 px-2 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded text-[var(--text-secondary)] disabled:opacity-50"
+              className="glass-btn h-7 px-2 text-xs text-[var(--text-secondary)] disabled:opacity-50 rounded-[12px]"
             >
               首页
             </button>
             <button
               onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="h-7 px-2 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded text-[var(--text-secondary)] disabled:opacity-50"
+              className="glass-btn h-7 px-2 text-xs text-[var(--text-secondary)] disabled:opacity-50 rounded-[12px]"
             >
               上一页
             </button>
@@ -296,14 +296,14 @@ export function TokenTable({ onRefresh }: Props) {
             <button
               onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="h-7 px-2 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded text-[var(--text-secondary)] disabled:opacity-50"
+              className="glass-btn h-7 px-2 text-xs text-[var(--text-secondary)] disabled:opacity-50 rounded-[12px]"
             >
               下一页
             </button>
             <button
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="h-7 px-2 text-xs bg-[var(--bg-tertiary)] border border-[var(--border)] rounded text-[var(--text-secondary)] disabled:opacity-50"
+              className="glass-btn h-7 px-2 text-xs text-[var(--text-secondary)] disabled:opacity-50 rounded-[12px]"
             >
               末页
             </button>

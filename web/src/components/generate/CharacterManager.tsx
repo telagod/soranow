@@ -120,14 +120,14 @@ export function CharacterManager({
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="h-8 px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] border border-[var(--border)] rounded-md transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            className="glass-btn h-8 px-3 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1.5 disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
             同步
           </button>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="h-8 px-3 text-xs text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-md transition-colors flex items-center gap-1.5"
+            className="glass-btn-primary h-8 px-3 text-xs flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             创建角色
@@ -143,7 +143,7 @@ export function CharacterManager({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="搜索角色..."
-          className="w-full h-9 pl-9 pr-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+          className="glass-input w-full h-9 pl-9 pr-3 text-sm text-[var(--text-primary)]"
         />
       </div>
 
@@ -154,7 +154,7 @@ export function CharacterManager({
         </div>
       ) : characters.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center mx-auto mb-4">
+          <div className="glass-card w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-[var(--text-muted)]" />
           </div>
           <p className="text-sm font-medium text-[var(--text-primary)]">
@@ -165,7 +165,7 @@ export function CharacterManager({
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="mt-4 h-9 px-4 text-sm text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-md transition-colors inline-flex items-center gap-2"
+            className="glass-btn-primary mt-4 h-9 px-4 text-sm inline-flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             创建第一个角色
@@ -330,17 +330,17 @@ export function CharacterPicker({
 
       {/* Selected Characters Preview */}
       {selectedCharacters.length > 0 && (
-        <div className="flex items-center gap-2 p-2 bg-[var(--accent)]/10 rounded-lg">
+        <div className="glass-card flex items-center gap-2 p-2">
           <div className="flex -space-x-2">
             {selectedCharacters.map((c) => (
               <div
                 key={c.id}
-                className="w-8 h-8 rounded-full border-2 border-[var(--bg-secondary)] overflow-hidden"
+                className="w-8 h-8 rounded-full border-2 border-white/30 overflow-hidden"
               >
                 {c.profile_url ? (
                   <img src={c.profile_url} alt={c.display_name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-[var(--bg-tertiary)] flex items-center justify-center">
+                  <div className="w-full h-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
                     <User className="w-4 h-4 text-[var(--text-muted)]" />
                   </div>
                 )}
@@ -360,10 +360,10 @@ export function CharacterPicker({
             key={character.id}
             onClick={() => handleToggle(character.character_id)}
             className={`
-              flex flex-col items-center p-2 rounded-lg border transition-all
+              glass-card flex flex-col items-center p-2 transition-all
               ${selectedIds.includes(character.character_id)
                 ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                : 'border-[var(--border)] bg-[var(--bg-tertiary)] hover:border-[var(--text-muted)]'
+                : 'hover:border-[var(--text-muted)]'
               }
             `}
           >
@@ -375,7 +375,7 @@ export function CharacterPicker({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-[var(--bg-secondary)] flex items-center justify-center">
+                <div className="w-full h-full bg-white/40 backdrop-blur-sm flex items-center justify-center">
                   <User className="w-5 h-5 text-[var(--text-muted)]" />
                 </div>
               )}

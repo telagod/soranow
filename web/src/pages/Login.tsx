@@ -33,42 +33,42 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900 dark:to-blue-900">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">SoraNow</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">管理控制台</p>
+          <p className="text-sm text-[var(--text-primary)] mt-1">管理控制台</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-6">
+        <form onSubmit={handleSubmit} className="glass-card rounded-[16px]">
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+              <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
                 用户名
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-primary)]" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full h-9 pl-9 pr-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                  className="glass-input w-full h-9 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                   placeholder="admin"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+              <label className="block text-xs font-medium text-[var(--text-primary)] mb-1.5">
                 密码
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-primary)]" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-9 pl-9 pr-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                  className="glass-input w-full h-9 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                   placeholder="••••••••"
                 />
               </div>
@@ -77,7 +77,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="glass-btn w-full h-9 text-[var(--text-primary)] text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2 rounded-[12px]"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? '登录中...' : '登录'}
@@ -85,7 +85,7 @@ export function LoginPage() {
           </div>
         </form>
 
-        <p className="text-center text-xs text-[var(--text-muted)] mt-4">
+        <p className="text-center text-xs text-[var(--text-primary)] mt-4">
           默认账号: admin / 空密码
         </p>
       </div>

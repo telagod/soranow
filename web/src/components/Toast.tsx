@@ -11,11 +11,16 @@ export function Toast() {
         <div
           key={toast.id}
           onClick={() => removeToast(toast.id)}
-          className={`toast-enter px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium cursor-pointer
-            ${toast.type === 'success' ? 'bg-green-600' : ''}
-            ${toast.type === 'error' ? 'bg-red-600' : ''}
-            ${toast.type === 'info' ? 'bg-blue-600' : ''}
-            text-white`}
+          className="toast-enter px-4 py-2.5 rounded-[12px] text-sm font-medium cursor-pointer text-white"
+          style={{
+            background: toast.type === 'success' ? 'rgba(22, 163, 74, 0.75)' : 
+                       toast.type === 'error' ? 'rgba(220, 38, 38, 0.75)' : 
+                       'rgba(37, 99, 235, 0.75)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)'
+          }}
         >
           {toast.message}
         </div>

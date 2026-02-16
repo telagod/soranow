@@ -145,11 +145,11 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] shadow-xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] sticky top-0 bg-[var(--bg-secondary)]">
+    <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center">
+      <div className="glass-modal w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 sticky top-0 backdrop-blur-md">
           <h3 className="text-sm font-medium text-[var(--text-primary)]">导入 Token</h3>
-          <button onClick={onClose} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded">
+          <button onClick={onClose} className="glass-btn p-1">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -164,10 +164,8 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
               <button
                 type="button"
                 onClick={() => setFormat('text')}
-                className={`flex-1 h-9 flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
-                  format === 'text'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border)]'
+                className={`glass-btn flex-1 h-9 flex items-center justify-center gap-2 ${
+                  format === 'text' ? 'bg-[var(--accent)] text-white' : ''
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -176,10 +174,8 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
               <button
                 type="button"
                 onClick={() => setFormat('json')}
-                className={`flex-1 h-9 flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
-                  format === 'json'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border)]'
+                className={`glass-btn flex-1 h-9 flex items-center justify-center gap-2 ${
+                  format === 'json' ? 'bg-[var(--accent)] text-white' : ''
                 }`}
               >
                 <FileJson className="w-4 h-4" />
@@ -196,7 +192,7 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value as any)}
-              className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)]"
+              className="glass-input w-full h-9 px-3"
             >
               <option value="rt">RT 模式（推荐）</option>
               <option value="at">AT 模式</option>
@@ -228,7 +224,7 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
                 placeholder={`每行一个，格式：邮箱----密码----RefreshToken\n例如：\nuser@example.com----password123----rt_xxxxx\nuser2@example.com----pass456----rt_yyyyy`}
-                className="w-full h-40 px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none font-mono"
+                className="glass-input w-full h-40 px-3 py-2 resize-none font-mono"
               />
               <p className="text-xs text-[var(--text-muted)] mt-1">
                 支持格式：邮箱----密码----RT 或 邮箱----RT 或 纯RT
@@ -243,7 +239,7 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
                 ref={fileRef}
                 type="file"
                 accept=".json,.txt"
-                className="w-full text-sm text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-[var(--bg-tertiary)] file:text-[var(--text-primary)] hover:file:bg-[var(--border)]"
+                className="w-full text-sm text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-white/30 backdrop-blur-sm file:text-[var(--text-primary)] hover:file:bg-white/30"
               />
               <p className="text-xs text-[var(--text-muted)] mt-1">
                 支持 JSON 数组格式或文本格式
@@ -281,7 +277,7 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-9 bg-[var(--bg-tertiary)] hover:bg-[var(--border)] text-[var(--text-secondary)] text-sm font-medium rounded-md transition-colors"
+              className="glass-btn flex-1 h-9"
             >
               {results ? '关闭' : '取消'}
             </button>
@@ -289,7 +285,7 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
               <button
                 onClick={handleImport}
                 disabled={loading}
-                className="flex-1 h-9 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="glass-btn flex-1 h-9 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 {loading ? '导入中...' : '导入'}

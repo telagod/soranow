@@ -184,7 +184,7 @@ export function SettingsPanel() {
     <div className="space-y-4">
       {/* Security */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
+        <div className="glass-card">
           <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">安全配置</h3>
           <div className="space-y-3">
             <div>
@@ -193,7 +193,7 @@ export function SettingsPanel() {
                 type="text"
                 value={adminUsername}
                 onChange={(e) => setAdminUsername(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
               />
             </div>
             <div>
@@ -202,7 +202,7 @@ export function SettingsPanel() {
                 type="password"
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
                 placeholder="输入旧密码"
               />
             </div>
@@ -212,20 +212,20 @@ export function SettingsPanel() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
                 placeholder="输入新密码"
               />
             </div>
             <button
               onClick={handleUpdatePassword}
-              className="w-full h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors"
+              className="glass-btn w-full"
             >
               修改密码
             </button>
           </div>
         </div>
 
-        <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
+        <div className="glass-card">
           <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">API 密钥配置</h3>
           <div className="space-y-3">
             <div>
@@ -235,7 +235,7 @@ export function SettingsPanel() {
                   type={showApiKey ? 'text' : 'password'}
                   value={apiKey}
                   readOnly
-                  className="w-full h-9 px-3 pr-10 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-muted)] font-mono"
+                  className="glass-input pr-10 font-mono"
                 />
                 <button
                   type="button"
@@ -252,13 +252,13 @@ export function SettingsPanel() {
                 type="text"
                 value={newApiKey}
                 onChange={(e) => setNewApiKey(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
                 placeholder="输入新的 API Key"
               />
             </div>
             <button
               onClick={handleUpdateApiKey}
-              className="w-full h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors"
+              className="glass-btn w-full"
             >
               更新 API Key
             </button>
@@ -267,15 +267,15 @@ export function SettingsPanel() {
       </div>
 
       {/* Proxy */}
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
+      <div className="glass-card">
         <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">代理配置</h3>
         <div className="space-y-3">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="glass-checkbox-container">
             <input
               type="checkbox"
               checked={proxyEnabled}
               onChange={(e) => setProxyEnabled(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              className="w-4 h-4 rounded border-white/30 bg-white/30 backdrop-blur-sm"
             />
             <span className="text-sm text-[var(--text-primary)]">启用代理</span>
           </label>
@@ -286,7 +286,7 @@ export function SettingsPanel() {
                 type="text"
                 value={proxyUrl}
                 onChange={(e) => setProxyUrl(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
                 placeholder="http://127.0.0.1:7890"
               />
             </div>
@@ -296,14 +296,14 @@ export function SettingsPanel() {
                 type="text"
                 value={proxyTestUrl}
                 onChange={(e) => setProxyTestUrl(e.target.value)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
               />
             </div>
           </div>
           <button
             onClick={handleTestProxy}
             disabled={testingProxy}
-            className="h-8 px-3 bg-[var(--bg-tertiary)] hover:bg-[var(--border)] text-[var(--text-secondary)] text-xs rounded transition-colors flex items-center gap-1 disabled:opacity-50"
+            className="glass-btn h-8 px-3 text-xs disabled:opacity-50"
           >
             {testingProxy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TestTube className="w-3.5 h-3.5" />}
             测试代理
@@ -318,15 +318,15 @@ export function SettingsPanel() {
 
       {/* Cache & Timeout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
+        <div className="glass-card">
           <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">缓存配置</h3>
           <div className="space-y-3">
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="glass-checkbox-container">
               <input
                 type="checkbox"
                 checked={cacheEnabled}
                 onChange={(e) => setCacheEnabled(e.target.checked)}
-                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                className="w-4 h-4 rounded border-white/30 bg-white/30 backdrop-blur-sm"
               />
               <span className="text-sm text-[var(--text-primary)]">启用缓存</span>
             </label>
@@ -338,7 +338,7 @@ export function SettingsPanel() {
                     type="number"
                     value={cacheTimeout}
                     onChange={(e) => setCacheTimeout(parseInt(e.target.value) || 7200)}
-                    className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                    className="glass-input"
                   />
                   <p className="text-xs text-[var(--text-muted)] mt-1">-1 表示永不删除</p>
                 </div>
@@ -348,7 +348,7 @@ export function SettingsPanel() {
                     type="text"
                     value={cacheBaseUrl}
                     onChange={(e) => setCacheBaseUrl(e.target.value)}
-                    className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                    className="glass-input"
                     placeholder="留空使用服务器地址"
                   />
                 </div>
@@ -357,7 +357,7 @@ export function SettingsPanel() {
           </div>
         </div>
 
-        <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
+        <div className="glass-card">
           <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">超时配置</h3>
           <div className="space-y-3">
             <div>
@@ -366,7 +366,7 @@ export function SettingsPanel() {
                 type="number"
                 value={imageTimeout}
                 onChange={(e) => setImageTimeout(parseInt(e.target.value) || 300)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
               />
             </div>
             <div>
@@ -375,7 +375,7 @@ export function SettingsPanel() {
                 type="number"
                 value={videoTimeout}
                 onChange={(e) => setVideoTimeout(parseInt(e.target.value) || 1500)}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
               />
             </div>
           </div>
@@ -383,7 +383,7 @@ export function SettingsPanel() {
       </div>
 
       {/* Error Handling */}
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
+      <div className="glass-card">
         <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">错误处理配置</h3>
         <div className="space-y-3">
           <div>
@@ -392,16 +392,16 @@ export function SettingsPanel() {
               type="number"
               value={errorBanThreshold}
               onChange={(e) => setErrorBanThreshold(parseInt(e.target.value) || 3)}
-              className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+              className="glass-input"
             />
             <p className="text-xs text-[var(--text-muted)] mt-1">连续错误达到此次数后自动禁用 Token</p>
           </div>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="glass-checkbox-container">
             <input
               type="checkbox"
               checked={taskRetryEnabled}
               onChange={(e) => setTaskRetryEnabled(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              className="w-4 h-4 rounded border-white/30 bg-white/30 backdrop-blur-sm"
             />
             <span className="text-sm text-[var(--text-primary)]">启用任务失败重试</span>
           </label>
@@ -414,16 +414,16 @@ export function SettingsPanel() {
                 onChange={(e) => setTaskMaxRetries(parseInt(e.target.value) || 3)}
                 min={1}
                 max={10}
-                className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+                className="glass-input"
               />
             </div>
           )}
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="glass-checkbox-container">
             <input
               type="checkbox"
               checked={autoDisable401}
               onChange={(e) => setAutoDisable401(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              className="w-4 h-4 rounded border-white/30 bg-white/30 backdrop-blur-sm"
             />
             <span className="text-sm text-[var(--text-primary)]">401 错误自动禁用 Token</span>
           </label>
@@ -431,15 +431,15 @@ export function SettingsPanel() {
       </div>
 
       {/* Watermark */}
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4">
+      <div className="glass-card">
         <h3 className="text-sm font-medium text-[var(--text-primary)] mb-4">无水印模式配置</h3>
         <div className="space-y-3">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="glass-checkbox-container">
             <input
               type="checkbox"
               checked={watermarkEnabled}
               onChange={(e) => setWatermarkEnabled(e.target.checked)}
-              className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+              className="w-4 h-4 rounded border-white/30 bg-white/30 backdrop-blur-sm"
             />
             <span className="text-sm text-[var(--text-primary)]">开启无水印模式</span>
           </label>
@@ -452,19 +452,19 @@ export function SettingsPanel() {
                 <select
                   value={watermarkParseMethod}
                   onChange={(e) => setWatermarkParseMethod(e.target.value)}
-                  className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)]"
+                  className="glass-input"
                 >
                   <option value="third_party">第三方解析</option>
                   <option value="custom">自定义解析接口</option>
                 </select>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="glass-checkbox-container">
                 <input
                   type="checkbox"
                   checked={watermarkFallback}
                   onChange={(e) => setWatermarkFallback(e.target.checked)}
-                  className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-tertiary)]"
+                  className="w-4 h-4 rounded border-white/30 bg-white/30 backdrop-blur-sm"
                 />
                 <span className="text-sm text-[var(--text-primary)]">去水印失败后自动回退</span>
               </label>
@@ -477,7 +477,7 @@ export function SettingsPanel() {
                       type="text"
                       value={watermarkParseUrl}
                       onChange={(e) => setWatermarkParseUrl(e.target.value)}
-                      className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                      className="glass-input"
                       placeholder="http://example.com"
                     />
                   </div>
@@ -487,7 +487,7 @@ export function SettingsPanel() {
                       type="password"
                       value={watermarkParseToken}
                       onChange={(e) => setWatermarkParseToken(e.target.value)}
-                      className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                      className="glass-input"
                       placeholder="输入访问密钥"
                     />
                   </div>
@@ -503,7 +503,7 @@ export function SettingsPanel() {
         <button
           onClick={handleSaveConfig}
           disabled={saving}
-          className="h-9 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="glass-btn h-9 px-4 disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? '保存中...' : '保存配置'}

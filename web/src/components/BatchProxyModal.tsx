@@ -29,11 +29,11 @@ export function BatchProxyModal({ tokenIds, onClose, onSuccess }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] shadow-xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+    <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center">
+      <div className="glass-modal w-full max-w-md">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/20">
           <h3 className="text-sm font-medium text-[var(--text-primary)]">批量修改代理</h3>
-          <button onClick={onClose} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded">
+          <button onClick={onClose} className="glass-btn p-1">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -51,7 +51,7 @@ export function BatchProxyModal({ tokenIds, onClose, onSuccess }: Props) {
               type="text"
               value={proxyUrl}
               onChange={(e) => setProxyUrl(e.target.value)}
-              className="w-full h-9 px-3 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+              className="glass-input w-full h-9 px-3"
               placeholder="留空则清除代理，如 http://127.0.0.1:7890"
             />
           </div>
@@ -60,14 +60,14 @@ export function BatchProxyModal({ tokenIds, onClose, onSuccess }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-9 bg-[var(--bg-tertiary)] hover:bg-[var(--border)] text-[var(--text-secondary)] text-sm font-medium rounded-md transition-colors"
+              className="glass-btn flex-1 h-9"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="glass-btn-primary flex-1 h-9 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? '修改中...' : '确认修改'}

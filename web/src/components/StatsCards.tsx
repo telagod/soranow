@@ -39,10 +39,11 @@ export function StatsCards() {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-      {cards.map((card) => (
+      {cards.map((card, index) => (
         <div
           key={card.label}
-          className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-3"
+          className="glass-card glass-animate-in"
+          style={{ animationDelay: `${index * 50}ms` }}
         >
           <div className="flex items-center gap-2 mb-1">
             <card.icon className={`w-4 h-4 ${card.color}`} />

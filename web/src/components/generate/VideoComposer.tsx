@@ -189,10 +189,10 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
   const totalDuration = segments.reduce((sum, s) => sum + s.duration, 0)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-      <div className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="glass-modal w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+        <div className="glass-header flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <Film className="w-5 h-5 text-[var(--accent)]" />
             <div>
@@ -216,7 +216,7 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
         <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
           {/* FFmpeg Status */}
           <div className={`
-            flex items-center gap-2 px-3 py-2 rounded-lg text-sm
+            flex items-center gap-2 px-3 py-2 rounded-[12px] text-sm
             ${ffmpegLoaded ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}
           `}>
             {ffmpegLoaded ? (
@@ -237,11 +237,11 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
             <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-2">
               视频片段
             </h3>
-            <div className="space-y-2">
+            <div className="glass-list space-y-2">
               {segments.map((segment, index) => (
                 <div
                   key={segment.id}
-                  className="flex items-center gap-3 p-2 bg-[var(--bg-tertiary)] rounded-lg"
+                  className="glass-item flex items-center gap-3 p-2"
                 >
                   {/* Thumbnail */}
                   <div className="w-20 h-12 rounded overflow-hidden bg-black flex-shrink-0">
@@ -263,7 +263,7 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
                   </div>
 
                   {/* Duration */}
-                  <span className="text-xs text-[var(--text-secondary)] px-2 py-1 bg-[var(--bg-secondary)] rounded">
+                  <span className="text-xs text-[var(--text-secondary)] px-2 py-1 bg-white/40 backdrop-blur-md rounded">
                     {segment.duration}s
                   </span>
                 </div>
@@ -278,9 +278,9 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
                 <span className="text-[var(--text-secondary)]">{progressText}</span>
                 <span className="text-[var(--text-muted)]">{Math.round(progress)}%</span>
               </div>
-              <div className="h-2 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+              <div className="glass-progress h-2 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[var(--accent)] transition-all duration-300"
+                  className="glass-progress-bar h-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -289,7 +289,7 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 text-red-500 rounded-lg text-sm">
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 text-red-500 rounded-[12px] text-sm">
               <AlertCircle className="w-4 h-4" />
               {error}
             </div>
@@ -301,7 +301,7 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
               <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-2">
                 {ffmpegLoaded ? '合成结果' : '预览'}
               </h3>
-              <div className="rounded-lg overflow-hidden border border-[var(--border)] bg-black">
+              <div className="rounded-[16px] overflow-hidden border border-white/30 bg-black">
                 <video
                   ref={videoRef}
                   src={composedUrl}
@@ -314,19 +314,19 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--border)]">
+        <div className="glass-footer flex items-center justify-end gap-2 p-4">
           {!composedUrl ? (
             <>
               <button
                 onClick={onClose}
-                className="px-4 h-9 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                className="glass-btn px-4 h-9 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={handleCompose}
                 disabled={isComposing || segments.length === 0}
-                className="px-4 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="glass-btn-primary px-4 h-9 text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {isComposing ? (
                   <>
@@ -346,7 +346,7 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
               {!ffmpegLoaded && (
                 <button
                   onClick={handleDownloadAll}
-                  className="px-4 h-9 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-tertiary)] rounded-md transition-colors flex items-center gap-2"
+                  className="glass-btn px-4 h-9 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   分段下载
@@ -354,7 +354,7 @@ export function VideoComposer({ segments, onClose, title = '合成视频' }: Vid
               )}
               <button
                 onClick={handleDownload}
-                className="px-4 h-9 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium rounded-md transition-colors flex items-center gap-2"
+                className="glass-btn-primary px-4 h-9 text-white text-sm font-medium transition-colors flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 {ffmpegLoaded ? '下载合成视频' : '下载第一段'}

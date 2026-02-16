@@ -20,10 +20,10 @@ export function StyleSelector({ selectedId, onSelect, disabled }: StyleSelectorP
             disabled={disabled}
             onClick={() => onSelect(selectedId === style.id ? undefined : style.id)}
             className={`
-              flex flex-col items-center justify-center p-2 rounded-lg border transition-all
+              glass-btn flex flex-col items-center justify-center p-2 rounded-[12px] transition-all
               ${selectedId === style.id
                 ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--text-primary)]'
-                : 'border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:border-[var(--text-muted)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }
               ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             `}
@@ -60,7 +60,7 @@ export function StyleSelectorCompact({ selectedId, onSelect, disabled }: StyleSe
         value={selectedId || ''}
         onChange={(e) => onSelect(e.target.value || undefined)}
         disabled={disabled}
-        className="flex-1 h-8 px-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] disabled:opacity-50"
+        className="glass-input flex-1 h-8 px-2 rounded-[12px] text-sm text-[var(--text-primary)] disabled:opacity-50"
       >
         <option value="">无风格</option>
         {STYLE_PRESETS.map((style) => (

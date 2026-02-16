@@ -60,19 +60,6 @@ export function ShotCard({
     })
   }
 
-  const getStatusColor = () => {
-    switch (shot.status) {
-      case 'generating':
-        return 'border-yellow-500 bg-yellow-500/5'
-      case 'completed':
-        return 'border-green-500 bg-green-500/5'
-      case 'failed':
-        return 'border-red-500 bg-red-500/5'
-      default:
-        return 'border-[var(--border)]'
-    }
-  }
-
   const referencedCharacters = characters.filter(c =>
     shot.characterRefs.includes(c.character_id)
   )
@@ -84,8 +71,10 @@ export function ShotCard({
   return (
     <div
       className={`
-        rounded-lg border transition-all
-        ${getStatusColor()}
+        glass-card rounded-[16px] transition-all
+        ${shot.status === 'generating' ? 'border-yellow-500/50' : ''}
+        ${shot.status === 'completed' ? 'border-green-500/50' : ''}
+        ${shot.status === 'failed' ? 'border-red-500/50' : ''}
         ${isDragging ? 'opacity-50 scale-95' : ''}
         ${isGenerating ? 'animate-pulse' : ''}
       `}
@@ -94,7 +83,7 @@ export function ShotCard({
       onDragEnd={onDragEnd}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 p-3 border-b border-[var(--border)]">
+      <div className="flex items-center gap-2 p-3 border-b border-white/30">
         {/* Drag Handle */}
         {onDragStart && (
           <div className="cursor-grab active:cursor-grabbing text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
@@ -103,7 +92,7 @@ export function ShotCard({
         )}
 
         {/* Shot Number */}
-        <div className="w-6 h-6 rounded bg-[var(--bg-tertiary)] flex items-center justify-center text-xs font-medium text-[var(--text-secondary)]">
+        <div className="w-6 h-6 rounded glass-subtle flex items-center justify-center text-xs font-medium text-[var(--text-secondary)]">
           {index + 1}
         </div>
 
@@ -116,7 +105,7 @@ export function ShotCard({
             onChange={(e) => handleDurationChange(parseInt(e.target.value) || 5)}
             min={5}
             max={25}
-            className="w-12 h-6 px-1 text-xs text-center bg-[var(--bg-tertiary)] border border-[var(--border)] rounded focus:outline-none focus:border-[var(--accent)]"
+            className="glass-input w-12 h-6 px-1 text-xs text-center rounded-[12px]"
           />
           <span className="text-xs text-[var(--text-muted)]">秒</span>
         </div>
@@ -170,7 +159,7 @@ export function ShotCard({
               placeholder="描述这个镜头的内容..."
               rows={3}
               disabled={isGenerating}
-              className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border)] rounded-md text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] resize-none disabled:opacity-50"
+              className="glass-input w-full px-3 py-2 rounded-[12px] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none disabled:opacity-50"
             />
           </div>
 
@@ -183,9 +172,9 @@ export function ShotCard({
               {referencedCharacters.map((character) => (
                 <div
                   key={character.id}
-                  className="flex items-center gap-1.5 px-2 py-1 bg-[var(--accent)]/10 border border-[var(--accent)]/30 rounded-full"
+                  className="flex items-center gap-1.5 px-2 py-1 bg-[var(--accent)]/10 border border-white/30 rounded-full"
                 >
-                  <div className="w-5 h-5 rounded-full overflow-hidden bg-[var(--bg-secondary)]">
+                  <div className="w-5 h-5 rounded-full overflow-hidden glass-subtle">
                     {character.profile_url ? (
                       <img
                         src={character.profile_url}
@@ -215,7 +204,7 @@ export function ShotCard({
                   <button
                     onClick={() => setShowCharacterPicker(!showCharacterPicker)}
                     disabled={isGenerating}
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--accent)] border border-dashed border-[var(--border)] hover:border-[var(--accent)] rounded-full transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--accent)] border border-dashed border-white/30 hover:border-[var(--accent)] rounded-full transition-colors disabled:opacity-50"
                   >
                     <Plus className="w-3 h-3" />
                     添加角色
@@ -223,14 +212,14 @@ export function ShotCard({
 
                   {/* Character Picker Dropdown */}
                   {showCharacterPicker && (
-                    <div className="absolute top-full left-0 mt-1 z-10 w-48 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg shadow-lg overflow-hidden">
+                    <div className="glass-card absolute top-full left-0 mt-1 z-10 w-48 rounded-[12px] shadow-lg overflow-hidden">
                       {availableCharacters.map((character) => (
                         <button
                           key={character.id}
                           onClick={() => handleAddCharacter(character.character_id)}
-                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-tertiary)] transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 glass-hover transition-colors"
                         >
-                          <div className="w-6 h-6 rounded-full overflow-hidden bg-[var(--bg-tertiary)]">
+                          <div className="w-6 h-6 rounded-full overflow-hidden glass-subtle">
                             {character.profile_url ? (
                               <img
                                 src={character.profile_url}
@@ -275,7 +264,7 @@ export function ShotCard({
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 参考图片
               </label>
-              <div className="w-20 h-20 rounded-lg overflow-hidden border border-[var(--border)]">
+              <div className="w-20 h-20 rounded-[12px] overflow-hidden border border-white/30">
                 <img
                   src={shot.imageRef}
                   alt="Reference"
@@ -291,7 +280,7 @@ export function ShotCard({
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 生成结果
               </label>
-              <div className="w-full aspect-video rounded-lg overflow-hidden border border-green-500/30 bg-black">
+              <div className="w-full aspect-video rounded-[12px] overflow-hidden border border-white/30 bg-black">
                 <video
                   src={shot.resultUrl}
                   controls
@@ -324,7 +313,7 @@ export function ShotPreview({ shot, index, isActive, onClick }: ShotPreviewProps
       case 'failed':
         return 'bg-red-500'
       default:
-        return 'bg-[var(--bg-tertiary)]'
+        return 'glass-subtle'
     }
   }
 
@@ -332,8 +321,8 @@ export function ShotPreview({ shot, index, isActive, onClick }: ShotPreviewProps
     <button
       onClick={onClick}
       className={`
-        relative flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden border-2 transition-all
-        ${isActive ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/30' : 'border-[var(--border)]'}
+        relative flex-shrink-0 w-24 h-16 rounded-[12px] overflow-hidden border-2 transition-all
+        ${isActive ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/30' : 'border-white/30'}
         ${shot.status === 'generating' ? 'animate-pulse' : ''}
       `}
     >

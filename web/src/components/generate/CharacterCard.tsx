@@ -54,16 +54,16 @@ export function CharacterCard({
         onClick={onSelect}
         disabled={character.status !== 'finalized'}
         className={`
-          flex items-center gap-2 p-2 rounded-lg border transition-all w-full text-left
+          glass-card flex items-center gap-2 p-2 rounded-[12px] transition-all w-full text-left
           ${isSelected
             ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-            : 'border-[var(--border)] bg-[var(--bg-tertiary)] hover:border-[var(--text-muted)]'
+            : 'hover:border-[var(--text-muted)]'
           }
           ${character.status !== 'finalized' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
       >
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--bg-secondary)] flex-shrink-0">
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-[var(--glass-bg-light)] flex-shrink-0">
           {character.profile_url ? (
             <img
               src={character.profile_url}
@@ -98,10 +98,10 @@ export function CharacterCard({
   return (
     <div
       className={`
-        bg-[var(--bg-tertiary)] rounded-lg border overflow-hidden transition-all
+        glass-card rounded-[16px] overflow-hidden transition-all
         ${isSelected
           ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]'
-          : 'border-[var(--border)]'
+          : ''
         }
         ${onSelect && character.status === 'finalized' ? 'cursor-pointer hover:border-[var(--text-muted)]' : ''}
       `}
@@ -110,7 +110,7 @@ export function CharacterCard({
       {/* Header */}
       <div className="p-3 flex items-start gap-3">
         {/* Avatar */}
-        <div className="w-12 h-12 rounded-full overflow-hidden bg-[var(--bg-secondary)] flex-shrink-0">
+        <div className="w-12 h-12 rounded-full overflow-hidden bg-[var(--glass-bg-light)] flex-shrink-0">
           {character.profile_url ? (
             <img
               src={character.profile_url}
@@ -162,11 +162,11 @@ export function CharacterCard({
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-2 bg-[var(--bg-secondary)] border-t border-[var(--border)] flex items-center justify-between">
+      <div className="px-3 py-2 bg-[var(--glass-bg)] border-t border-white/30 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
           <span className={`
             px-1.5 py-0.5 rounded
-            ${character.visibility === 'public' ? 'bg-green-500/10 text-green-500' : 'bg-gray-500/10 text-gray-400'}
+            ${character.visibility === 'public' ? 'bg-green-500/10 text-green-500' : 'bg-white/10 text-[var(--text-muted)]'}
           `}>
             {character.visibility === 'public' ? '公开' : '私有'}
           </span>

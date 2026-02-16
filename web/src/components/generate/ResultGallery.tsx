@@ -25,7 +25,7 @@ export function ResultGallery({ results, onDelete, onClear }: ResultGalleryProps
   if (results.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[400px] text-[var(--text-muted)]">
-        <div className="w-16 h-16 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-full glass-card flex items-center justify-center mb-4">
           <Image className="w-8 h-8 opacity-50" />
         </div>
         <p className="text-sm font-medium">暂无生成结果</p>
@@ -43,10 +43,10 @@ export function ResultGallery({ results, onDelete, onClear }: ResultGalleryProps
         </span>
         <div className="flex items-center gap-2">
           {/* View Mode Toggle */}
-          <div className="flex bg-[var(--bg-tertiary)] rounded-md p-0.5">
+          <div className="flex glass-card p-0.5">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-[var(--bg-secondary)]' : ''}`}
+              className={`p-1.5 rounded ${viewMode === 'grid' ? 'glass-card' : ''}`}
               title="网格视图"
             >
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16">
@@ -55,7 +55,7 @@ export function ResultGallery({ results, onDelete, onClear }: ResultGalleryProps
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-[var(--bg-secondary)]' : ''}`}
+              className={`p-1.5 rounded ${viewMode === 'list' ? 'glass-card' : ''}`}
               title="列表视图"
             >
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16">
@@ -118,7 +118,7 @@ interface ResultCardProps {
 
 function ResultCard({ result, onView, onDelete }: ResultCardProps) {
   return (
-    <div className="group relative bg-[var(--bg-tertiary)] rounded-lg overflow-hidden border border-[var(--border)]">
+    <div className="group relative glass-card overflow-hidden">
       {/* Media */}
       <div className="aspect-square relative cursor-pointer" onClick={onView}>
         {result.type === 'image' ? (
@@ -216,7 +216,7 @@ function ResultListItem({ result, onView, onDelete }: ResultListItemProps) {
   const timeAgo = getTimeAgo(result.timestamp)
 
   return (
-    <div className="flex items-center gap-3 p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border)]">
+    <div className="flex items-center gap-3 p-2 glass-card">
       {/* Thumbnail */}
       <div
         className="w-16 h-16 flex-shrink-0 rounded overflow-hidden cursor-pointer"
@@ -315,14 +315,14 @@ function ResultLightbox({ result, onClose }: ResultLightboxProps) {
           <img
             src={result.url}
             alt={result.prompt}
-            className="max-w-full max-h-[80vh] object-contain rounded-lg"
+            className="max-w-full max-h-[80vh] object-contain rounded-[16px]"
           />
         ) : (
           <video
             src={result.url}
             controls
             autoPlay
-            className="max-w-full max-h-[80vh] rounded-lg"
+            className="max-w-full max-h-[80vh] rounded-[16px]"
           />
         )}
 
