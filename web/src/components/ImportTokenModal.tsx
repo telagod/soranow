@@ -147,7 +147,7 @@ export function ImportTokenModal({ onClose, onSuccess }: Props) {
   return (
     <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center">
       <div className="glass-modal w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 sticky top-0 backdrop-blur-md">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 sticky top-0 backdrop-blur-md">
           <h3 className="text-sm font-medium text-[var(--text-primary)]">导入 Token</h3>
           <button onClick={onClose} className="glass-btn p-1">
             <X className="w-4 h-4" />

@@ -74,7 +74,7 @@ export function LogsPanel({ onRefresh }: Props) {
 
   if (loading) {
     return (
-      <div className="bg-white/40 backdrop-blur-md rounded-[16px] border border-white/30 p-8 text-center text-[var(--text-muted)] text-sm">
+      <div className="glass-card p-8 text-center text-[var(--text-muted)] text-sm">
         加载中...
       </div>
     )
@@ -83,7 +83,7 @@ export function LogsPanel({ onRefresh }: Props) {
   return (
     <>
       <div className="glass-card">
-        <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
           <h2 className="text-sm font-medium text-[var(--text-primary)]">请求日志</h2>
           <button
             onClick={handleClearLogs}
@@ -102,7 +102,7 @@ export function LogsPanel({ onRefresh }: Props) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/20 text-[var(--text-muted)]">
+                <tr className="border-b border-white/10 text-[var(--text-muted)]">
                   <th className="h-9 px-3 text-left font-medium">操作</th>
                   <th className="h-9 px-3 text-left font-medium">Token</th>
                   <th className="h-9 px-3 text-left font-medium">状态码</th>
@@ -112,9 +112,9 @@ export function LogsPanel({ onRefresh }: Props) {
                   <th className="h-9 px-3 text-right font-medium">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/20">
+              <tbody className="divide-y divide-white/10">
                 {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-white/20 transition-colors">
+                  <tr key={log.id} className="hover:bg-white/10 transition-colors">
                     <td className="h-10 px-3 text-[var(--text-primary)]">{log.operation}</td>
                     <td className="h-10 px-3 text-xs text-[var(--text-secondary)]">
                       {log.token_email || '未知'}
@@ -163,7 +163,7 @@ export function LogsPanel({ onRefresh }: Props) {
       {selectedLog && (
         <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center">
           <div className="glass-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 sticky top-0 bg-white/30">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 sticky top-0 glass-toolbar">
               <h3 className="text-sm font-medium text-[var(--text-primary)]">日志详情</h3>
               <button onClick={() => setSelectedLog(null)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-[12px]">
                 <X className="w-4 h-4" />

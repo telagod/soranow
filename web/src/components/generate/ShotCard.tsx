@@ -83,7 +83,7 @@ export function ShotCard({
       onDragEnd={onDragEnd}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 p-3 border-b border-white/30">
+      <div className="flex items-center gap-2 p-3 border-b border-white/10">
         {/* Drag Handle */}
         {onDragStart && (
           <div className="cursor-grab active:cursor-grabbing text-[var(--text-muted)] hover:text-[var(--text-secondary)]">

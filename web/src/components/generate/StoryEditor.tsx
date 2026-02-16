@@ -271,7 +271,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/30">
+      <div className="flex items-center justify-between p-4 border-b border-white/10">
         <div className="flex items-center gap-4">
           <div>
             <input
@@ -345,7 +345,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Settings */}
-        <div className="w-64 border-r border-white/30 p-4 overflow-y-auto space-y-4 bg-[var(--glass-bg)] backdrop-blur-[16px]">
+        <div className="w-48 lg:w-64 border-r border-white/10 p-4 overflow-y-auto space-y-4 bg-[var(--glass-bg)] backdrop-blur-[16px]">
           {/* Orientation */}
           <div>
             <label className="block text-xs font-medium text-[var(--text-secondary)] mb-2">
@@ -462,7 +462,7 @@ export function StoryEditor({ tokens, onGenerationComplete }: StoryEditorProps) 
 
           {/* Timeline */}
           {story.shots.length > 0 && (
-            <div className="border-t border-white/30 p-3">
+            <div className="border-t border-white/10 p-3">
               <div className="flex items-center gap-2">
                 {/* Navigation */}
                 <button

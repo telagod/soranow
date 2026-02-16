@@ -120,9 +120,9 @@ export function ManagePage() {
       </header>
 
       {/* Tabs */}
-      <div className="glass-toolbar border-b border-white/20">
+      <div className="glass-toolbar border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4">
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 tabs-scroll">
             {tabs.map((t) => (
               <button
                 key={t.id}

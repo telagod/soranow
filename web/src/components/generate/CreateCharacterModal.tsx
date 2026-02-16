@@ -237,7 +237,7 @@ export function CreateCharacterModal({
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-2 p-4 border-b border-white/30">
+        <div className="flex items-center justify-center gap-2 p-4 border-b border-white/10">
           {(['upload', 'processing', 'finalize'] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center">
               <div className={`

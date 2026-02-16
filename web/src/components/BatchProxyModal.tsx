@@ -31,7 +31,7 @@ export function BatchProxyModal({ tokenIds, onClose, onSuccess }: Props) {
   return (
     <div className="glass-overlay fixed inset-0 z-50 flex items-center justify-center">
       <div className="glass-modal w-full max-w-md">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/20">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <h3 className="text-sm font-medium text-[var(--text-primary)]">批量修改代理</h3>
           <button onClick={onClose} className="glass-btn p-1">
             <X className="w-4 h-4" />

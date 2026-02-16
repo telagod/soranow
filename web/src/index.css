@@ -94,7 +94,7 @@ body {
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.glass-card:hover {
+.glass-card.glass-card--interactive:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
 }
@@ -310,12 +310,58 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 12px;
   transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 0.75rem;
 }
 
 .glass-input:focus {
   background: rgba(255, 255, 255, 0.3);
   outline: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Fix select option in dark mode */
+.glass-input option {
+  background: #2a2a3e;
+  color: var(--text-primary);
+}
+
+@media (prefers-color-scheme: light) {
+  .glass-input option {
+    background: #ffffff;
+    color: rgba(0,0,0,0.9);
+  }
+}
+
+/* Textarea override - auto height */
+textarea.glass-input {
+  height: auto;
+}
+
+/* Responsive: hide non-essential table columns on small screens */
+@media (max-width: 1024px) {
+  .token-table-hide-lg {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .token-table-hide-md {
+    display: none;
+  }
+}
+
+/* Responsive: tabs scroll on small screens */
+.tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tabs-scroll::-webkit-scrollbar {
+  display: none;
 }
 
 /* Glass Highlight (for active tabs) */

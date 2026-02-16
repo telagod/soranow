@@ -134,14 +134,14 @@ export function TokenTable({ onRefresh }: Props) {
               </th>
               <th className="h-9 px-3 text-left font-medium">邮箱</th>
               <th className="h-9 px-3 text-left font-medium">状态</th>
-              <th className="h-9 px-3 text-left font-medium">Client ID</th>
-              <th className="h-9 px-3 text-left font-medium">过期时间</th>
-              <th className="h-9 px-3 text-left font-medium">类型</th>
+              <th className="h-9 px-3 text-left font-medium token-table-hide-md">Client ID</th>
+              <th className="h-9 px-3 text-left font-medium token-table-hide-lg">过期时间</th>
+              <th className="h-9 px-3 text-left font-medium token-table-hide-md">类型</th>
               <th className="h-9 px-3 text-left font-medium">可用次数</th>
-              <th className="h-9 px-3 text-left font-medium">图片</th>
-              <th className="h-9 px-3 text-left font-medium">视频</th>
-              <th className="h-9 px-3 text-left font-medium">错误</th>
-              <th className="h-9 px-3 text-left font-medium">备注</th>
+              <th className="h-9 px-3 text-left font-medium token-table-hide-lg">图片</th>
+              <th className="h-9 px-3 text-left font-medium token-table-hide-lg">视频</th>
+              <th className="h-9 px-3 text-left font-medium token-table-hide-md">错误</th>
+              <th className="h-9 px-3 text-left font-medium token-table-hide-md">备注</th>
               <th className="h-9 px-3 text-right font-medium">操作</th>
             </tr>
           </thead>
@@ -172,7 +172,7 @@ export function TokenTable({ onRefresh }: Props) {
                     {token.is_expired ? '已过期' : token.is_active ? '活跃' : '禁用'}
                   </span>
                 </td>
-                <td className="h-10 px-3">
+                <td className="h-10 px-3 token-table-hide-md">
                   {token.client_id ? (
                     <button
                       onClick={() => copyClientId(token.client_id!)}
@@ -186,10 +186,10 @@ export function TokenTable({ onRefresh }: Props) {
                     <span className="text-[var(--text-muted)]">-</span>
                   )}
                 </td>
-                <td className="h-10 px-3 text-xs text-[var(--text-secondary)]">
+                <td className="h-10 px-3 text-xs text-[var(--text-secondary)] token-table-hide-lg">
                   {formatExpiry(token.expiry_time)}
                 </td>
-                <td className="h-10 px-3">
+                <td className="h-10 px-3 token-table-hide-md">
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs text-blue-400 bg-blue-500/15 border border-white/20 backdrop-blur-sm" title={token.plan_title || ''}>
                     {formatPlanType(token.plan_type)}
                   </span>
@@ -197,16 +197,16 @@ export function TokenTable({ onRefresh }: Props) {
                 <td className="h-10 px-3 text-[var(--text-secondary)]">
                   {token.sora2_remaining_count !== undefined ? token.sora2_remaining_count : '-'}
                 </td>
-                <td className="h-10 px-3 text-[var(--text-secondary)]">
+                <td className="h-10 px-3 text-[var(--text-secondary)] token-table-hide-lg">
                   {token.image_enabled ? token.total_image_count : '-'}
                 </td>
-                <td className="h-10 px-3 text-[var(--text-secondary)]">
+                <td className="h-10 px-3 text-[var(--text-secondary)] token-table-hide-lg">
                   {token.video_enabled ? token.total_video_count : '-'}
                 </td>
-                <td className="h-10 px-3 text-[var(--text-secondary)]">
+                <td className="h-10 px-3 text-[var(--text-secondary)] token-table-hide-md">
                   {token.total_error_count || 0}
                 </td>
-                <td className="h-10 px-3 text-xs text-[var(--text-muted)] max-w-[100px] truncate" title={token.remark || ''}>
+                <td className="h-10 px-3 text-xs text-[var(--text-muted)] max-w-[100px] truncate token-table-hide-md" title={token.remark || ''}>
                   {token.remark || '-'}
                 </td>
                 <td className="h-10 px-3">
@@ -256,7 +256,7 @@ export function TokenTable({ onRefresh }: Props) {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-white/20 glass-toolbar rounded-b-xl">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 glass-toolbar rounded-b-xl">
         <div className="flex items-center gap-2">
           <span className="text-xs text-[var(--text-muted)]">每页</span>
           <select

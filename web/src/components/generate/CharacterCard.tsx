@@ -162,7 +162,7 @@ export function CharacterCard({
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-2 bg-[var(--glass-bg)] border-t border-white/30 flex items-center justify-between">
+      <div className="px-3 py-2 bg-[var(--glass-bg)] border-t border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
           <span className={`
             px-1.5 py-0.5 rounded

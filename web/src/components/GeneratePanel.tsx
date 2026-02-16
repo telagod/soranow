@@ -128,7 +128,7 @@ export function GeneratePanel() {
         {activeTab === 'quick' && (
           <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-0">
             {/* Left Panel - Quick Generate */}
-            <div className="lg:col-span-1 p-4 overflow-y-auto border-r border-white/20 bg-transparent">
+            <div className="lg:col-span-1 p-4 overflow-y-auto border-r border-white/10 bg-transparent">
               <QuickGenerate tokens={tokens} onResult={handleResult} />
             </div>
 
