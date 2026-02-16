@@ -22,6 +22,7 @@ func SetupRouter(db *database.DB, lb *services.LoadBalancer, cm *services.Concur
 	// Create SoraClient for character operations
 	soraClient := services.NewSoraClient("", 120, nil)
 	characterHandler := NewCharacterHandler(db, soraClient)
+	generateHandler := NewGenerateHandler(db)
 
 	// Health check (no auth required)
 	router.GET("/health", func(c *gin.Context) {
@@ -120,6 +121,11 @@ func SetupRouter(db *database.DB, lb *services.LoadBalancer, cm *services.Concur
 			protected.DELETE("/characters/:id", characterHandler.HandleDeleteCharacter)
 			protected.GET("/characters/search", characterHandler.HandleSearchCharacters)
 			protected.POST("/characters/sync", characterHandler.HandleSyncCharacters)
+
+			// Generation
+			protected.POST("/generate/video", generateHandler.HandleGenerateVideo)
+			protected.POST("/generate/image", generateHandler.HandleGenerateImage)
+			protected.GET("/generate/:id/status", generateHandler.HandleGetGenerationStatus)
 		}
 	}
 
